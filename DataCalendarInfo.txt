@@ -3,7 +3,7 @@ Version: Alpha0.1
 Category: Productivity
 Author: Kinase B/Milan Ninkovic
 Date of Publishing: November 2024
-License: 
+License: MIT
 Description: DataCalendar is a Windows Desktop Application, made to be a Calendar based platform for data input.
 The central idea behind DataCalendar is that of creating a Calendar application that is viable for raw data storage in a simple, non-bloated, efficient manner.
 It has low preformance and memory requirements as well as compatability with older windows versions.
