@@ -1,0 +1,376 @@
+DataCalendar 1.0
+
+I - Introduction
+
+DataCalendar is means to be a WINDOWS program with capability to ensure following things:
+
+1.	To serve as a data input and data sorting algorithm, that would allow users to easily, visually, put data into given dates, and save them to corresponding dates
+
+2.	To allow users to visually distinguish dates with help of coloring of date buttons with custom colors, or attaching custom images or icons onto date buttons.
+
+3.	It must be secure from any cybersecurity threat that seeks to use input as vector of an attack or general corruption vector. This is to be done through pre-allocating Heap memory, and rigoriously tracking any possibility of inconsistencies between data allocated and data avalible.
+
+4.	Program will produce data containing all the data inputted within the DataCalendar.exe to an external text file, that will be read by program to load the data itself and respresent it in the program. This datafile should be easily readable and modifiable by human. It should be easily to back it up via simple drag and drop, and to restore it the same way.
+
+5.	Program will use minimal memory requirements and minimal processing power. That is it must be as computationally efficient as it is economically possible.
+
+6.	It should be legacy compatible with older windows versions as well as be good-as-is, not requiring continious updating or upgrading to maintain its security, efficiency and usability.
+
+7.	It should have an ability of scripted input and patterned input. That would allow for a internal script to input data according to the logic user wants it to.
+
+The DataCalendarv1.0 will be thus a program focused on storing data in a Year/Month/Day format, and representing it in such a way with intuitive calendar UI.
+
+II - Layout
+
+=================================================================================================================
+|Settings bar																									|
+=================================================================================================================
+|					|														  |Data		|Sel|Date	  |Color	|
+|					|														  |Window	|Ect|Images	  |Selection|
+|					|														  |			|Ion|or		  |			|
+|					|														  |			|Sig|Icons	  |			|
+|					|														  |			|Nal|		  |			|
+|					|														  |			|///|		  |			|
+|					|														  |			|///|		  |			|
+|					|														  |			|///|		  |			|
+|					|														  |			|///|		  |			|
+|					|														  |			|///|		  |			|
+|					|														  |			|///|		  |			|
+|					|						Dates Selection					  |			|///|		  |			|
+|	Months Selection|														  |			|///|		  |			|
+|					|														  |			|///|		  |			|
+|					|														  |			|///|		  |			|
+|					|														  |			|///|		  |			|
+|					|														  |			|///|		  |			|
+|					|														  |			|///|		  |			|
+|					|														  |			|///|		  |			|
+|					|														  |			|///|		  |			|
+|					|														  |			|///|		  |			|
+|					|														  |			|///|		  |			|
+|					|														  |			|///|		  |			|
+|					|___________________________________________________________________________________________|
+|					|																							|
+|					|																							|
+|					|							Textbox															|
+|					|																							|
+|					|																							|
+|					|																							|
+|					|																							|
+|					|																							|
+|					|																							|
+|					|																							|
+|					|																							|
+|					|																							|
+|					|																							|
+|					|																							|
+|_______________________________________________________________________________________________________________|
+
+
+The DataCalendarv1.0 shall use the graphical layout above for its UI. 
+
+MONTHS SELECTION shall have MONTH BUTTONS that will signal changes for DATES BUTTONS.
+DATES BUTTONS will be modified by DATE IMAGES OR ICONS and COLOR SELECTION that would modify look of buttons.
+DATA WINDOW will include 
+	- the current REALTIME that can be copy-pasted by clicking it.
+	- Date selected Year/Month/Day and ability to change it by typing into that window and changing Year/Month/Day manually
+	- Data Wipe button, that would wipe data for selected day
+	- Word Wrap button, that would wrap the data without instering newlines or modifying data, simply graphically.
+	- Save button for saving the data inputted for selected date
+	- remaining/avalible bytes windows that would show how much bytes remains and how much bytes has been allocated for the pre-allocated Heap
+SELECTION SIGNAL will simply light up when input to a date is ready after selecting a date.
+TEXTBOX	 is the simply text input box that shall have all functions a text editor program has. As well as scroll bars to sroll the text horizontally and vertically.
+SETTINGS BAR, shall include setting options, that would open a dialog box with following things
+	- Debug option, that will show debug data for error finding and things like that
+	- Ranged data wipe, that would allow for wiping data for range of selected dates
+	- Option to change buffer size
+	- Scripted input setting, that would allow for scrippted input by setting up parameters and letting it run
+	It shall also contain info dialog box that would roughly explain rules of backing up how data is formatted, how images and colors are signaled and shown, and how dates are shown and other technicalities that might interest a more advanced user.
+
+III -	Program Entry Point, MyCalendar.C
+
+WIN32 API entrypoint should be included in this logical page. Followed by the head loop, its own WndProc.
+The entrypoint shall serve as a main traffic center of the message loop, and thus be where following child windows are created:
+	- Marks window, laid out in Marks.c which will include DATA WINDOW, COLOR WINDOW, ICONS AND IMAGES WINDOW as well as SELECTION SIGNAL
+	- Dates window, laid out in Dates.c which covers DATES SELECTION window
+	- Months window, laid out in Months.c which covers MONTHS SELECTION window
+	- Textbox window, laid out in Textbox.c which covers TEXTBOX window.
+
+It will also generate all the files necessary for the said windows, including the refference calendar file, data source if none is present, RGBcolors data if none is present, MarksData for refferencing on which date which mark to be applied, Images folder with 100 pre-set images to load images/icons for marks from.
+
+Within MyCalendar.c, the WndProc should properly configure the sizes of all of its child windows we just mentioned.
+Sizes of child windows should be relative to the size of the app itself.
+
+SETTINGS BAR should also be created here. Dialog box entry points and their own windows and "Proc's"
+SETTINGS BAR thus should have here, created, "Settings", and "Info" buttons on the SETTINGS BAR.
+
+Upon clicking "Settings" you should have the Settings dialog box appear.
+The size of the dialog box should be no larger then one of the app, and should appear rectangular, with its vertical size greater then horizontal.
+
+
+=============================================
+|					  |		Ranged	Data	|
+|	Debug Button	  |			Wipe		|
+|					  |						|
+|	Scripted 		  |	Change Program		|
+|	Input			  |	Window Colors		|
+|					  |						|
+|	Change	Months	  |						|
+|		Range		  |	Change Data sources |
+|					  |						|
+|	Change Special	  |						|
+|		Character	  |	Change Textbox		|
+|					  |	Font, size,type,etc	|
+|					  |						|
+|					  |						|
+|					  |						|
+|					  |						|
+|-------------------------------------------|
+|											|
+|											|
+|					Change Buffer			|
+|					Size					|
+|											|
+|											|
+=============================================
+
+- Debug button, is little mark button that once marked will enable debuggin data to be shown.
+Debug data, majority of it is seen during text selection, by drag-selecting text,
+while other data is simply the latest windows message program recieved/handled, and allocation amounts.
+
+- Scrtiped Input, will be a button that would lead to another dialog box.
+The dialog box will be layed out as follows
+The Input Box within Scripted Input dialog shall have buffer avability of 1/2 of the total buffer size stated next to change buffer size button, that represents buffer othe TextBox
+
+=========================================
+|Macros		|							|
+|			|							|
+|Select		|	Input Box				|
+|Dates		|							|
+|			|							|
+|Help		|							|
+=========================================
+
+Macros will be a button, that would lead to another dialog that would help us define Macros for scripting.
+Macro Definition as an input box defining macro itself, it shall have max buffer size of 1/10 of the TextBox buffer.
+
+=========================================
+|			|	Macro definition		|
+|Macro:	%| ||							|
+|Info		|___________________________|
+|Save Remove|	Macro list				|
+=========================================
+
+In the Macro dialog you will have little text saying "Macro" with small input box to type in the macro.
+If you type into it "a", in the Input Box of scripted input, it will mean that you are going to type into %a, that will then do what has been defined in it, at the macro definition.
+Upon saving it, it will be added to the macro list. Removing it will remove it as a macro in the macro list.
+MACRO DEFINITION will define what the macro will do. The way you would define something you would system/program defined macro values.
+Macro values would presented in Info button that would show a dialog box with text listing all the macros we would list here.
+Each pre-defined macro would be followed by a !, typing two !! in a row would allow for typing "!" itself
+-	!Date, Date of input
+-	!Month, Month of Input
+-	!Year, Year of Input
+-	!TotalTextAmount, Sum of the data within the data source
+-	!TotalLines, Sum of lines of the data within the data source
+-	!TotalCharacters, Sum of characters of data within the data source
+-	!TotalDateTextAmount, Sum of data within a Date
+-	!TotalDateLines, Sum of lines within a Date
+-	!TotalDateCharacters, Sum of characters within a Date
+-	!TotalMemoryRemaining, memory remaining in bytes 
+-	!PassedDates, amount of dates passed within the runtime of the script
+-	!PassedMonths, amount of months passed within the runtime of the script 
+-	!PassedYears, amount of years passed within the runtime of the script
+-	!EmptyFlag, Yes if there is no data in date, No otherwise
+-	!EmptyDatesWithinAMonth, How many dates within the month are empty
+-	!EmptyDatesWithinAYear, How many dates within the year are empty
+-	!TotalDateSelectedTextAmount, Amount of total data within the text selected for the script input
+-	!TotalDateSelectedLines, Amount of total lines within the text selected for script input
+-	!TotalDateSelectedCharacters, Amount of total characters within the text selected for script input
+-	!PassedChars, Amount of chars typed in the runtime of the script
+-	!PassedLines, Amount of lines typed in the runtime of the script
+-	!TotalPassedTextData, Total amount of data inputted within the runtime of the script
+-	!sqrt, Sqaure root of a number: !sqrt!Number10
+-	!Exponent, Exponent of a number: !Exponent!Number10
+-	!Multiplication, Multiplication of a number: !Multiplication!Number100!Number100
+-	!Plus, Add a number to a number: !Plus!Number10!Number5
+-	!Minus, Minus a number by a number: !Minus!Number10!Number5
+-	!Number, Declares that following string will be numbers and to be treated as numbers by the program. It will consider number any decimal integer, once it finds a non decimal integer it will stop the number classification. Thus !Number100 is translated as number 100 within the program, !Numbered will be translated as invalid number, d is not a number. !Number52 100, will translate 52 as a number.
+-	!FloatNumber, Will translate number as a float ie if you type !Number100.200 will only give you number 100, !FloatNumber100.200 however will give you 100.200 as a number. 
+-	!Logarithm, !Logarithm!Number10!Number4, First number is the log value and second number log input.
+-	!Division, !Division!Number8!Number2 will give you 4
+-	!Sum, !Sum!Number4!Number-4!Number2 will give you 2, it allows for summing line full of !Number 
+-	!StringApply, Applies a String, used as return point of a string
+-	!StringFalse, Will not apply a string
+-	!If, an if statement, !If!Number2!Equivalent!MacroZ!EndIf, if if statement is true it will continue down the script, and not otherwise.
+-	!Equivalent, Serves as a comparison statement within the if statement 
+-	!EndIf, end of if statement, terminates the !If
+-	!(, bracket open, used to manipulate order of priority
+-	!), bracket close, used to manipulate order of priority
+
+The macro itself will always return a string of text, thus making !StringApply or !StringFalse ending statements of a script.
+Every input within the script input box is considered as a character of a string, until typing !Number which will then be loaded by program as an integer, used for arithemtics within the script.
+
+Textbox of macroinput will itself have its own heapsize limit set to 1/10th of the total heapsize allocated for the textbox.
+macros will be saved as strings, the sum of macros must not exceed one half of the total heapsize allocated for the textbox
+
+Back to Scripted Input box itself, once you get to InputBox of scripting, the scipt input box must not ecxeed 1/4 of the Heapallocate memory. 
+It should fail gracefully if during runtime of the script the memory limit is reached.
+writing two %% in a row should output only one "%". As "%" is used for macrodefinition.
+Once you type in ie %a it will output a string according to the logic set up by a macro into the dates selected via Dates button.
+Help button shall explain all of this for a user and anything else that might be necessary or very helpful.
+Upon clicking select dates you will be present with a dialog box to select range of dates:
+
+=========================
+|Date	| From|	To		|
+|Year:					|
+|Month					|
+|Day:					|
+|	SELECT	Button		|
+=========================
+
+Here you input a FROM date and TO date and everything in between, including the dates in FROM and TO will be selected as target of scripted input.
+
+Moving back to the SETTINGS dialog box, we have Change Range of Months. This will be two small input boxes next to each other, that will seek a year input.
+Below them a small select button will be, and you would click that button and it will change applications standard 100 years month range with the current year in the middle,
+to a new range selected. This will create a new text file that will create a refference calendar for program to read of.
+
+Change special character will be a button plus small one character input box, that will show present special character. You will be able to change it to any ASCII character,
+upon clicking the small button next to it, change would be apply, and way application read the source datattext data will change, instead of for example "*" a special character
+will be on of your choice.
+This sepcial character can never by typed into the textbox and if found within data source outside its appropriate place(next to date definition within the source file), program will fail, as it is used as a delimiter of dates.
+
+Ranged data wipe works similary as a range of dates selection within scripting dialog, except it wipes out the data, Data wipe range will not be its own dialog but will have itself painted onto SETTINGS dialog taking small section of space as in approx 1/3rd of its half.
+
+Change program window colors will show a dialog box
+
+=========================================
+|			|							|
+|			|							|
+|			|							|
+|			|							|
+|			|							|
+|Windows	|							|
+|Areas		|		COLOR				|
+|List		|							|
+|			|							|
+|			|							|
+|			|							|
+|			|---------------------------|
+|			|		SAVE				|
+=========================================
+
+Windows Areas List would list you all the paintable windows areas,
+this will be:
+- Buttons of months and dates
+- Background of months, dates, textbox.
+- Color of input signaling window
+
+COLOR window would show present color,
+Click on COLOR window would present the STANDARD WIN32 colors selection dialog
+upon selecting a color COLOR window would change to that color.
+Clicking save would save the color for that window and change the said windows color/window area color to it
+
+Moving onto Change Data sources.
+Data sources should have text present that would show the current file where data source is,
+below it a button to change it. Upon clicking that button you would be present with STANDARD WIN32 file selection dlg,
+you would be on your way to find a new txt file to be used as a source file.
+Upon selecting txt file of a desire it will change the text we just mentioned to a new location and program would load a data using that text file as a source.
+Selecting a bad text file would cause a crash.
+
+Change Textbox Font would present the setting for a new font including its color, this is a textbox font.
+You can change it by clicking button that would be present below this text.
+Upon clicking it you would be present with STANDARD WIN32 font change dialog.
+Upon selecting a desired font it will change the font of the textbox and show you the setting you just selected within the text above the button, together with the new coloring.
+
+Change buffer size is a inputbox with a change buffer button below, it will show current amount of reserved total Heap memory. You can change it by typing a different amount in bytes, it will then change to that size upon clicking the button below called change buffer or something, and it will then cause Heap memory to change. This should be followed by "Memory avalible" on the original program to present new memory avalible, and the Memory remaining to present new value smaller or bigger depending on the change itself.
+
+Mycalendar.c includes the error parsing function, that is called anywhere in the program, where error might be detected and produce a error with a serial number given by a programmer.
+
+IV - Months.c
+
+Months window can be descrabed as a series of rectangle bars. These rectangle bars would represent months themselves, and are arranged in a way that each one below is one month forwards and vice versa, each month above is month before. 
+The rectangular buttons would be scrolled vertically up and down, according to the amount of months represented, which can be modified from settings as discussed before.
+by default there is 1200 months that cover 100 years, 50 years before and after the given current year.
+The month bars are vertically lined up thus, separated in-between by roughly same size of the height of month button itself.
+On the month bars, year and month is written.
+
+Months bars themselves do not truly exist in number of 1200, instead there is 24 child windows that act as 24 buttons, that upon scrolling up and down, push and pop and have the data of month/year they hold change. This data/year the button holds is the logical refference point to which month you are selecting. The month bars change months relative to amount you scrolled.
+
+Clicking a month button, sends a signal to the rest of the program, that month and/or year has changed, this will cause change in calendar dates, textbox will become unavalible until a date is selected and input signal should not be colored anymore.
+
+V - Dates.c
+
+Dates.c is responsible for handling Dates window, it lays out 31 dates buttons.
+1 of them is sequentially unavalible due to how dating works, depending on the month, the avalible date buttons will shrink or not.
+Each date button should have corresponding date number written on it.
+Clicking on a date should signal rest of the program a date has been either changed or selected, this should color the input bar, and enable textbox input.
+Changing a date would make textbox read from that date, which would change textbox data presented accordin to the date selected, and if and what is contained for that date in the data source file.
+Dates.c shall also contain all the signaling necessary as well as functions that shall paint the date buttons. 
+Thus there is ability to represent the change of color, different colors to be painted on top of the date and icons to be put on it.
+
+The buttons themelves are relative squares that are layed out to cover the whole window. They are all spaced out rought 1/2 of their height from each other, with date 1 2 3 going from left to right then down and left to right again etc...
+
+Right clicking the date should remove any coloring or image put on top of it. To make date number distinguishable in cases when its color or an image put into it, and inversion function would ensure to invert a color of number itself to make it distinguishable from the coloring of the button.
+
+Upon selecting a date, the date should also color itself, with color that is invert of the one already present, be it a default one or an RGB or an image.
+
+You should not be able to select or interact with dates if month has not been selected.
+
+VI - Marks.c
+
+Marks.c is responsible for handling various buttons, images layout and icons layout as well as input avalibility bar.
+Marks.c first takes care of creation of Marks Window, that then is responsible for creating 4 child windows,
+the images window, colors window, buttons window. Avability bar is using the background of marks window as for coloring.
+
+The Colors window has two columns, and 50 rows of colors. In other words there are 100 colors, originally from randomly generated
+set of RGB colors into the RGB data file that will be refference for colors. RGB data is given to indexes, each color button has its own index, that is then assigned a color in 
+the rgbdata text file. Thus a change of a color window will change color for all dates that have that color selected.
+Upon clicking a color button one must have date selected, the selected date will change the color to the button clicked, that will first be inverse cause its the selected date.
+Once the color is selected, this will update the marksdata file, that ties together the color index, that then uses rgbdata file to pain the the date depending on which colorbutton index has been selected, and the index color depends on again rgbdata file.
+The window can be scrolled by using of a mouse wheel or by putting moving your mouse to it and clicking up and down arrows
+Right clicking a color bing up color change standard win32 dlg that allows for index color to be changed, this change will be updated and saved within colorsrgb.
+colorsrgb is laid out as colors index = rgb color in a pure numerical format.
+
+Icons and images window functions the same when it comes to scrolling and layout as well as size, same as colors window. Upon left clicking it, icon is applied to the date.
+Right clicking it will result in bringing up the win32 file selection dialog, from which you can select an image, and use it as an icon in the program.
+It uses same indexing logic as color bar, except it uses index numbers refferenced as name of .bmp file. 1st index will use 1.bmp and etc... up to 100.
+These bmps are within a file where program is located.
+The program should be capable of taking an unrelated image and converting to a desired bmp format that makes image representable in the program.
+
+Signal input bar is simply going to be colored or uncolored when textbox input is avalible, that is when exact day is selected.
+
+Mark buttons window now is different, it holds as follows:
+-	Realtime showcase, it shows current year/month/day/hour/minute/second/milisecond. Upon clicking it, it will copy this as is, and you can paste it anywhere.
+-	Manual day selection window, that will presnt you with current year/month/day selected, you should be able to select either of this and change its number, and thus if its in the current month range, for that day/year/month combination to be selected. If its invalid it simply shouldnt be able to change.
+-	Data wipe button that wiped data for selected day
+-	Word Wrap that enables word wrapping
+-	memory allocated and memory left. First repersents total memory reserved and second how much memory is left.
+These should be aranged vertically in one column and be distinguishable via small lines in between and different colors of buttons.
+Each click should lead to short color inversion before releasing the button or leaving the focus of the button.
+
+VII - Textbox.c
+
+Textbox.c is to act like a classic notepad. The only true difference being is that it uses input checking algorithm. This is done by creating a pre-allocated heap, and then allocating only memory from that heap for input. Beyond this rigorious checking for any discepancies in input or memory ensures that corruption of program via textbox input is kept at minimal.
+
+Textbox functions by having each line be a pointer to a string. A newline generates this pointer, that then prints it out on a newline.
+Textbox
+
+Textbox has a horizontal and vertical scrollbar. It also has ability to select-drag by holding left button of the mouse. It can then do the deletion of the text by clicking backspace or delete button on keyboard.
+It has a deletion function that upon clicking delete or backspace deletes a character or a whole line if at the 0th point of a line
+It has a caret, the caret can never point right of the newline caret. Caret otherwise shares same functionalities and technicalities like any other caret in the world.
+Textbox has also copypaste ability. Upon selecting multiple text and pasting you will delete text selected and paste new text into its place.
+You can select all by clicing CTRL+A
+You can enter insert mode by clicking insert button.
+You can go to end of line by clicking END on keybord, and beggining of a line by clicking home by a keyboad.
+You can use PgUP and PgDn keys to move whole hight up or down.
+You can navigate the text via keyboard arrows, up and down arrow change lines, once you move down it will position caret amount characters to right as it was line above, if line is too small it will move to the end of line, same rule when moving caret up. Left and right arrows move caret left-right.
+
+You cannot input the special character used as delimiter in datatext source file.
+You can save the data by clicking CTRL+S.
+You can right click the textbox for deletion,copy,paste.
+
+Each input allocated one byte accordingly, and each deletion deallocates, the tracking of the amount of memory allocated and released result in memory avalible.
+Only during pasting and/or selection deletion do multiple bytes get deallocated or allocated.
+Another exception is newlines, upon inputting newline a pointer gets allocated and initialized.
+The amount of allocated pointer is always equal to lines+1 the +1 is the delimiting NULL pointer
+Same for character array of the pointer, the line itself, is always delimited by a '\0' aka 0 or null character.
+

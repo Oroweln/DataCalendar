@@ -9,7 +9,7 @@
 
 /*
 RULE 1: Restrict all code to very simple control flow constructs—do not use goto statements, setjmp or longjmp
-constructs, or direct or indirect recursion.
+constructs, or direct or indirect recursion. (Due to WIN32 API being based on indirect recursion system of messages, you can use only windows messaging system in terms of indirect recursion, however if recursion is not using messaging system, it cannot be justified)
 
 This means no:
 
@@ -34,8 +34,9 @@ Rule 3: Do not use dynamic memory allocation after initialization.
 Note that the only way to dynamically claim memory in the absence of memory allocation from the heap is to use stack
 memory. In the absence of recursion, an upper bound on the use of stack memory can be derived statically, thus making
 it possible to prove that an application will always live within its resource bounds.
+(We will try and meet this rule, partially by the end of the program finishing, so we can globally understand how much memory, statically, it can use max, until then, we simply dont know.)
 */
-
+//====CONTINUE HERE
 /*
 Rule 4: No function should be longer than what can be printed on a single sheet of paper in a standard format with one
 line per statement and one line per declaration. Typically, this means no more than about 60 lines of code per function.
@@ -43,6 +44,7 @@ line per statement and one line per declaration. Typically, this means no more t
 Rationale : Each function should be a logical unit in the code that is understandable and verifiable as a unit. It is much
 harder to understand a logical unit that spans multiple pages. Excessively long functions are often a sign of poorly
 structured code.
+(dUE TO STRUCTURE of winAPI treat each "message" in a switch, as a logical unit, thus 60 lines per message switch as well)
 */
 
 /*

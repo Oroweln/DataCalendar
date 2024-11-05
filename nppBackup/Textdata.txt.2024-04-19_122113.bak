@@ -1,0 +1,54 @@
+*1 :1 :2024**2 :1 :2024*3. Learn C Socket Programming/Make our encryption-decryption program network capable!/
+Make our keylogger network capable and grow into some form of a real good spyware that can also work like our 
+encryption decryption programe to spy and share more data securely then just keylog/Make calendar app optionally network 
+capable/Furnish them all to be better/simple peer-to-peer connections and data-sharing way application thingy. 
+*5 :1 :2024**3 :1 :2024*- Salvation through marriage.
+    - Fitness and health effort
+        - GAAD diet with sunday cheat day. Morning 1/2 workout, with a pre-workout snack.
+    - Hope, faith and open heart
+        - Put faith into God when it comes to find "the one". Do not be discourage by confusion, mischief or failure, there must be no compromise or pride in this operation. For indeed, there is not way, outside of this paradigm that we can be essentially "saved" and finally end this "Self-war".
+- Great Cybersecurity and programming as path to creating the company.
+    - Become cybersecurity professional, certified: Pass the 6 certifications(in order): 1. A+(PASSED) 2. Network+(PASSED) 3. Security+(PASSED) 4. Pentest+ 5. Elearn Security ECPPTV2 6. OSCP
+    - Get financial independence through out independent programing projects: 1. Learn C/build encryption-decryption program(DONE) 
+    2. Learn Win32API/Build: new modular encryption decryption program that can potentially encrypt through "magic touch" of outside source and become undecryptable thanks to its assymetric nature(ie put in usb and encrypt everything)/Build a Calendar application of our desire/Build keylogger/ additionally create own Promodo/timer app. Fully integrate Mikhail And Danil into this to help you! Interloop these program into an API of sort.
+    3. Learn C Socket Programming/Make our encryption-decryption program network capable!/Make our keylogger network capable and grow into some form of a real good spyware that can also work like our encryption decryption programe to spy and share more data securely then just keylog/Make calendar app optionally network capable/Furnish them all to be better/simple peer-to-peer connections and data-sharing way application thingy. 
+    4. Learn GTK for linux with C/Make all forementioned apps portable in linux  
+    5. Linux from scratch/Furnish and make all our apps better and extend their capacities if so desired/make them capable of invading any linux based device. Create a alternative extermely lightweight text-editor to VIM, that is more modern(and still lightweight) and much more user friendly. Create a PDF editor, txt exporter and manipulator program. Create a deduction/dataset/braintree visualizer application
+    6. C++, Make all forementioned apps portable on MAC OS
+    7. Qt/GTK with C++, Make all forementioned apps portable on android, windows and mac mobile devices, nutritient calculator app
+    8. Networking/winAPI/ programming c++, TTS app that is extremely good
+    9. Code Complete 
+    10. Learn Assembly 
+    11. Learn computer architecture 
+    12. Learn PHP-CSS-HTTP  
+    13. Learn C# 
+    14. Learn electronics
+    15. Learn AI
+    16. Learn Graphics programming
+        - use our day-to-day study program for both, average out around of 3h per day worth.
+- Christianism project as our calling.
+    - Use the goodreads to-read-list then write methodology
+        - Use day-to-day-ideology program for now, average out around 1h per day worth
+
+
+- Program we will make:
+1. Cybersecurity encryption-decryption program we already mentioned above(TBD)
+2. Keylogger, combined with the cybersec program as a whole i guess(TBD)
+3. Calender, that is actually good and useful(Currently doing)
+4. PDF reader, that actually is not shit.(TBD)
+5. Calculator, all-in-one, whilist being both acessable without needing to be a nerd but still remaining, all-in-one scientific calculator capacity.(TBD)
+
+        notes: 
+                USE:    The Power of 10 Rules for error-free software, and debugability. 
+                        Enable multi-threading in them??? to make them faster( Your primary thread creates all the windows that your program needs, includes all the window procedures for these windows, and processes all the messages for these windows. Any other threads are simply background crunchers. They do not interact with the user except through communication with the primary thread. LOOKOUT for race conditions. Automatic variables, which are always local to a function, are unique to each thread because they occupy space on the stack, and each thread has its own stack. "Thread local storage, TLS". The point is-it just doesn't make sense to add multithreading to an application that doesn't need it. Some applications just can't benefit from multithreading. If your program displays the hourglass cursor for an annoying period of time, or if it uses the PeekMessage call to avoid the hourglass cursor, then restructuring the program for multithreading is probably a good idea. Otherwise, you're just making things hard for yourself and possibly introducing new bugs into the code.).
+                        1.  Avoid complex flow constructs, such as goto and recursion.
+                        2.  All loops must have fixed bounds. This prevents runaway code.
+                        3.  Avoid heap memory allocation.
+                        4.  Restrict functions to a single printed page.
+                        5.  Use a minimum of two runtime assertions per function.
+                        6.  Restrict the scope of data to the smallest possible.
+                        7.  Check the return value of all non-void functions, or cast to void to indicate the return value is useless.
+                        8.  Use the preprocessor sparingly.
+                        9.  Limit pointer use to a single dereference, and do not use function pointers.
+                        10. Compile with all possible warnings active; all warnings should then be addressed before release of the software.
+*4 :1 :2024**17:1 :2024*s*23:4 :2024*ddsgds

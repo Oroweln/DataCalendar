@@ -47,9 +47,6 @@
     <ClCompile Include="Marks.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="dataformatting.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="MyCalendar.rc">
@@ -63,10 +60,17 @@
     <Image Include="MyCalendar.ico">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="bitmap1.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Bitmap.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <Text Include="sampledata.txt">
       <Filter>Resource Files</Filter>
     </Text>
+    <Text Include="DataCalendar.txt" />
   </ItemGroup>
 </Project>

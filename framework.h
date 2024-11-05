@@ -15,11 +15,12 @@
 #include <malloc.h>
 #include <memory.h>
 #include <tchar.h>
+#include <commdlg.h>
+#include <math.h>
 
-#include "Resource.h"
 #include "MyCalendar.h"
-#include "TenRules.h"
 
 #include <windowsx.h>
 
-#include <Shlwapi.h>
+#include "Shlwapi.h"
+#include <CommCtrl.h>
