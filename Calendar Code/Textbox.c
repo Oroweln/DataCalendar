@@ -95,7 +95,7 @@ TODO: reffer to the beginning of the code for further objectives
 INT_PTR CALLBACK TextBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	static BOOL CtrlPressed = FALSE;
-	BOOL nigga = TRUE;
+	BOOL flag667 = TRUE;
 	int fagsdgadg = 0;
 	int id = 0;
 	static HBRUSH hbrbackground = { 0 }, textcolor = { 0 };
@@ -106,10 +106,10 @@ INT_PTR CALLBACK TextBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 		fagsdgadg = GetLastError();
 		TextBoxHwnd = (GetDlgItem(hwnd, TEXTBOXINPUT));//old one was named TEXTBOXINPUT in case something breaks bad
 		fagsdgadg = GetLastError();
-		nigga = SetWindowSubclass(TextBoxHwnd, TextBoxInputSbc, 0, 0);
+		flag667 = SetWindowSubclass(TextBoxHwnd, TextBoxInputSbc, 0, 0);
 		txtBackColor(TextBoxHwnd, textbackground);
-		COLORREF nigger2 = RGB(GetRValue(~textbackground), GetGValue(~textbackground), GetBValue(~textbackground));
-		txtColor(TextBoxHwnd, nigger2);
+		COLORREF stupidtextcolor = RGB(GetRValue(~textbackground), GetGValue(~textbackground), GetBValue(~textbackground));
+		txtColor(TextBoxHwnd, stupidtextcolor);
 		break;
 		/*
 
@@ -185,8 +185,8 @@ LRESULT TextBoxInputSbc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT
 		break;	
 	case TEXTBOXCOLORCHANGE:
 		txtBackColor(TextBoxHwnd, textbackground);
-		COLORREF nigger2 = RGB(GetRValue(~textbackground), GetGValue(~textbackground), GetBValue(~textbackground));
-		txtColor(TextBoxHwnd, nigger2);
+		COLORREF textboxcolor = RGB(GetRValue(~textbackground), GetGValue(~textbackground), GetBValue(~textbackground));
+		txtColor(TextBoxHwnd, textboxcolor);
 		break;
 	case WM_RBUTTONDOWN:
 		hPopMenu = LoadMenu(GetModuleHandle(NULL), MAKEINTRESOURCEA(TXTPOPMENU));
@@ -237,7 +237,6 @@ LRESULT TextBoxInputSbc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT
 			thefont.lStructSize = sizeof(CHOOSEFONT);
 			LPCHOOSEFONT lpthefont = &thefont;
 			ChooseFont(lpthefont);
-			int nigger = GetLastError();
 			cf.bCharSet = thefont.lpLogFont->lfCharSet;
 			cf.bPitchAndFamily = thefont.lpLogFont->lfPitchAndFamily;
 			cf.cbSize = sizeof(CHARFORMAT);
@@ -396,7 +395,7 @@ int DateTestBufferLoad(int* amountread, OVERLAPPED* overlapstruct, int* appendlo
 
 BOOL savingFunction(int* appendlocationindex, char * pchInputBuf, OVERLAPPED* overlapstruct, int* amountread, BOOL datepresent)
 {//we need to push all data forwards or backwards depending if we are ammending smaller sized new dataset or larger sized.
-	HANDLE hFile = { 0 };
+	HANDLE hFile = { 0 };//errorint
 	BOOL EmptyDataFlag = TRUE;
 	size_t oldstringlength = *amountread;//amountread here is amount of data within the date selected
 	//figure out if the data to be applied is less or more then last one that was, or perhaps same size.
@@ -406,9 +405,9 @@ BOOL savingFunction(int* appendlocationindex, char * pchInputBuf, OVERLAPPED* ov
 		CrashDumpFunction(227,0);
 		return 0;
 	}
-	int faggotcancer = GetLastError();
+	int returnval = GetLastError();
 	*amountread = GetFileSize(hFile, NULL);//amountread will be here used as total length
-	faggotcancer = GetLastError();
+	returnval = GetLastError();
 	//to do this get already existing data's size
 	char * tempcharbuf = calloc(*amountread+5,sizeof(char));
 	if (tempcharbuf == NULL)
@@ -419,24 +418,24 @@ BOOL savingFunction(int* appendlocationindex, char * pchInputBuf, OVERLAPPED* ov
 	//test read
 	if (FALSE == ReadFile(hFile, tempcharbuf, *amountread, NULL, overlapstruct))
 	{
-		int errorniggas = GetLastError();
-		if ((*amountread != 0) && (errorniggas != 38))//if amountread is 0, that means file is empty, hence why error was thrown.
+		int errorval = GetLastError();
+		if ((*amountread != 0) && (errorval != 38))//if amountread is 0, that means file is empty, hence why error was thrown.
 		{
 			CloseHandle(hFile);
 			CrashDumpFunction(246,0);
 			return FALSE;
 		}
-		else if (errorniggas == 38 && *amountread > 0)//the amountread is not empty but the date itself is empty and standing at the border of EOF, effectively offset is at EOF, we fix this by doing nothing
+		else if (errorval == 38 && *amountread > 0)//the amountread is not empty but the date itself is empty and standing at the border of EOF, effectively offset is at EOF, we fix this by doing nothing
 			;
 	}
 	free(tempcharbuf);
 	OVERLAPPED noverlapstruct = { 0 };
 	noverlapstruct.Offset = *appendlocationindex;//point at the beggining of data
-	faggotcancer = GetLastError();
+	returnval = GetLastError();
 	CloseHandle(hFile);
 	OVERLAPPED ewreoverlapstruct = { 0 };
 	ewreoverlapstruct.Offset = *appendlocationindex;
-	faggotcancer = GetLastError();
+	returnval = GetLastError();
 	size_t strLength = strnlen_s(pchInputBuf, pchinputbuffermemory);
 	if (datepresent == FALSE && strLength>0)
 	{//append date mark
@@ -447,8 +446,8 @@ BOOL savingFunction(int* appendlocationindex, char * pchInputBuf, OVERLAPPED* ov
 		else 
 		{
 			hFile = CreateFileA(datasource, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-			faggotcancer = WriteFile(hFile, selecteddate1, 12, NULL, &ewreoverlapstruct);
-			faggotcancer = GetLastError();
+			returnval = WriteFile(hFile, selecteddate1, 12, NULL, &ewreoverlapstruct);
+			returnval = GetLastError();
 			CloseHandle(hFile);
 		}
 		hFile = CreateFileA(datasource, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -502,7 +501,6 @@ BOOL LargeDataWrite(char* pchInputBuf, OVERLAPPED* overlapstruct, int* amountrea
 	}
 	if (FALSE == ReadFile(hFile, readbuffer, *amountread - overlapstruct->Offset, NULL, overlapstruct))
 	{
-		int faggotnigger = GetLastError();
 		free(readbuffer);
 		free(readbuffer2);
 		readbuffer2 = readbuffer = NULL;

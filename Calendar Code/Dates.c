@@ -99,7 +99,7 @@ LRESULT CALLBACK DatesProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam
 		fontdownright.x = temprect.right;
 		fontdownright.y = temprect.bottom;
 
-		int stupidnigga = MoveWindow(FontBoxHwnd, fontrect.left, fontrect.top, fontrect.right - fontrect.left, fontrect.bottom - fontrect.top, TRUE);
+		int returnval21424 = MoveWindow(FontBoxHwnd, fontrect.left, fontrect.top, fontrect.right - fontrect.left, fontrect.bottom - fontrect.top, TRUE);
 		UpdateWindow(FontBoxHwnd);
 		ShowWindow(FontBoxHwnd, SW_SHOW);
 
@@ -236,12 +236,12 @@ LRESULT CALLBACK DatesProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam
 				triv[1].x = windorect.right + ysize / 20;
 				triv[1].y = windorect.bottom;
 				GradientFill(hdc, triv, 2, &grr, 1, GRADIENT_FILL_RECT_H);
-				HBRUSH niggabrush = 0;
-				niggabrush = CreateSolidBrush(RGB(72, 41, 250));
-				FrameRect(hdc, &windorect, niggabrush);
+				HBRUSH somebrush = 0;
+				somebrush = CreateSolidBrush(RGB(72, 41, 250));
+				FrameRect(hdc, &windorect, somebrush);
 				MoveWindow(buttondates[TrustedIndex], buttonrectd.left + (TrustedIndex - linefact * 7) * buttonrectd.right * 2, linefact * buttonrectd.bottom * 2 + buttonrectd.bottom / 2, buttonrectd.right, buttonrectd.bottom, TRUE);
 				UpdateWindow(buttondates[TrustedIndex]);
-				DeleteObject(niggabrush);
+				DeleteObject(somebrush);
 			}
 			datindice += 3;
 		}
@@ -260,7 +260,9 @@ LRESULT CALLBACK DatesProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam
 
 BOOL buttonDCreationRoutine(int cyChar, HWND* buttonarrayz, HWND hwnd, LPWSTR* Dates)
 {
-	buttonrectd.left = 0;//he has autism needs to die from thats why we put the values  here
+	buttonrectd.left = 0;//he has 
+	
+	//needs to die from thats why we put the values  here
 	buttonrectd.top = DatesRect.top;
 	buttonrectd.right = DatesRect.right / 20;
 	buttonrectd.bottom = DatesRect.bottom/14;//this determines heigh of marks buttons!!!
@@ -366,7 +368,7 @@ LRESULT CALLBACK ButtonProcD(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 		dateflags[lindex] = TRUE;
 		InvalidateRect(GetParent(hwnd), NULL, TRUE);
 		GetSystemTime(&temptime);
-		int TheYearNigga = selecteddate>>11;
+		int CurrentYear = selecteddate>>11;
 		DWORD32 messagevalue = 0;
 		if (datemonthindex % 12 == 0)
 		{
@@ -380,13 +382,13 @@ LRESULT CALLBACK ButtonProcD(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 		}
 		messagevalue += lindex << 16;
 		DWORD32 lmessagevalue = 12120;//flag for setfocus to set date stamp
-		lmessagevalue += (TheYearNigga) << 16; //store year in highword lparam for sendmessage below
+		lmessagevalue += (CurrentYear) << 16; //store year in highword lparam for sendmessage below
 		datechangecheck = TRUE;
 		SendMessageA(TextBoxInput, IDDATECHANGE, 0, 0);
 		SetFocus(TextBoxInput);
 		Edit_Enable(TextBoxInput, TRUE);
-		HWND retard = GetParent(buttonmarks[0]);
-		SendMessageA(retard, MARK_DATESIGNAL, 241, 11);
+		HWND parenthwnd = GetParent(buttonmarks[0]);
+		SendMessageA(parenthwnd, MARK_DATESIGNAL, 241, 11);
 		InvalidateRect(GetParent(buttonmarks[2]), NULL, TRUE);
 		UpdateWindow(GetParent(buttonmarks[2]));
 		return 0;
@@ -962,7 +964,7 @@ HWND colorshapepresent(HWND refferentbutton, BOOL * mydflags, int shape, int col
 	overlapstruct.Offset = max(0, ((datemonthindex * 150) - 150)) + 24 + mydateindice;
 	char charbuffer[500] = { 0 };
 	char tempstring[1000] = { 0 };
-	COLORREF nigger2 = RGB(GetRValue(~ColorSelection[color - 100]), GetGValue(~ColorSelection[color - 100]), GetBValue(~ColorSelection[color - 100]));
+	COLORREF shapecolor = RGB(GetRValue(~ColorSelection[color - 100]), GetGValue(~ColorSelection[color - 100]), GetBValue(~ColorSelection[color - 100]));
 	sprintf_s(tempstring, 1000, "%sLocaldata.txt", theworkingdirectory);
 	tmpfile = CreateFileA((LPCSTR)tempstring, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (FALSE == ReadFile(tmpfile, charbuffer, 3, NULL, &overlapstruct))
@@ -975,7 +977,7 @@ HWND colorshapepresent(HWND refferentbutton, BOOL * mydflags, int shape, int col
 	if (mydflags != NULL && mydflags[rp] == TRUE)
 	{
 		SetBkMode(hdc, TRANSPARENT);
-		SetTextColor(hdc, nigger2);
+		SetTextColor(hdc, shapecolor);
 		hBrush = CreateSolidBrush(datesbuttoncolor);
 		PatBlt(hdc, myrect.left, myrect.top, myrect.right - myrect.left, myrect.bottom - myrect.top, DSTINVERT);
 		FrameRect(hdc, &myrect, hBrush);
@@ -984,7 +986,7 @@ HWND colorshapepresent(HWND refferentbutton, BOOL * mydflags, int shape, int col
 	else
 	{
 		SetBkMode(hdc, TRANSPARENT);
-		SetTextColor(hdc, nigger2);
+		SetTextColor(hdc, shapecolor);
 	}
 	SelectObject(hdc, datefont);
 	TextOutA(hdc, myrect.right / 7, myrect.bottom / 3, charbuffer, 3);
@@ -1075,7 +1077,7 @@ INT_PTR CALLBACK FontBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 {
 	HWND hwndtemp = 0, hwndFont = 0, controlhwnd = 0;
 	int value = 0;
-	int static fontvalue = 0, fuckyounigger = 0;
+	int static fontvalue = 0;
 	CHARFORMAT cf = { 0 };
 	switch (message)
 	{

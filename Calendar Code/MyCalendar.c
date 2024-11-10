@@ -12,7 +12,7 @@ int ordereddatasave = 0;//when on will re-arrange existing data into ordered sta
 char* macrolist[256] = {0};
 RECT buttonrect;//month button rect
 RECT buttonrectd;//day buttons rect, declared multiple times, due to some unknown bug, you need to change all of them for it to work properly
-int pusenjekurca = 0;//used for buttonrectd.bottom declarations, due to the fact they are declared multiple times cause WIN32 is made by austitic faggots
+int pusenjekurca = 0;//used for buttonrectd.bottom declarations, due to the fact they are declared multiple times cause WIN32 is made by good guys
 HANDLE myHeap = { 0 };//Used as handle for inputbuf heap
 char theworkingdirectory[1000] = { 0 };//stores the working
 char datasource[2000] = { 0 };//stores the data source location that is being read and appended to
@@ -54,7 +54,7 @@ char* whcararryinputroutine(char* wchararray, int* dateprint, int monthtype, int
 char* monthtypegen(char* wchararray, int dateyear, int datemonth, int * monthtype, int* thirty, int* leap, int* thirtyone);
 char* MacroFormating(char* macroformated, HWND parenthwnd, BOOL firstrun);
 int NumbersFunction(int* symbolsarray, int maxsymbols, char* macroformated, int numbersbegginingindex, BOOL FloatFlag, int * lastbyteindex);
-BOOL comparestrings(char* faggot1, char* faggot2);
+BOOL comparestrings(char* string1, char* string2);
 
 char* DataSaveReordering(char* readbuffer);
 int NearestDate(int mflag, int filesize, char* readbuffer, int* appendindexlocation, char* dateset, int i);
@@ -167,7 +167,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			hFile = CreateFileA(tempstring, GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
 		int filesize = GetFileSize(hFile, NULL);
 		if(filesize > 0)//read data file contents and update the global variables necessary
-		{//use the faggot numeration for windows colors dialog to order the colors
+		{//use the numeration for windows colors dialog to order the colors
 			/*1 - monthbutton
 			3-daybutton
 			4-monthsbackground
@@ -226,9 +226,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			memset(tempstring2, 0, filesize);
 			int maxcount = min(filesize, 2000);
 			_memccpy(datasource, tempstring + templength, '\n', maxcount);
-			int faggotlength = strlen(datasource);
-			datasource[faggotlength-1] = 0;
-			templength += faggotlength;
+			int stringlength20 = strlen(datasource);
+			datasource[stringlength20 -1] = 0;
+			templength += stringlength20;
 			_memccpy(specialchar, tempstring + templength, '\n', filesize - templength);
 			specialchar[1] = 0;
 			templength += strlen(specialchar)+1;//zbog kurcine
@@ -293,7 +293,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 				//hWTextBox = CreateWindowEx(0, TEXT("EDIT"), NULL, WS_CHILD | ES_LEFT | ES_MULTILINE | ES_WANTRETURN | WS_VSCROLL | WS_HSCROLL | WS_DISABLED | ES_AUTOVSCROLL, 0,0,0,0, hwnd, NULL, NULL, NULL);
 				hWTextBox = CreateDialogW(GetModuleHandle(NULL), TEXTBOXDIALOG, hwnd, TextBoxProc);
 				hWDates = CreateWindowEx(0, TEXT("Dates Class"), TEXT("Dates"), WS_CHILD | WS_DISABLED, 0,0,0,0, hwnd, NULL, NULL, NULL);
-				buttonrectd.left = 0;//he has autism needs to die from thats why we put the values  here
+				buttonrectd.left = 0;//very dump shit dont ask removing it will break more shit
 				buttonrectd.top = DatesRect.top;
 				buttonrectd.right = DatesRect.right / 20;
 				pusenjekurca = buttonrectd.bottom = DatesRect.bottom / 12 + DatesRect.bottom / 200;//determines the leftmost marksbuttons and the dates buttons
@@ -340,7 +340,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			if (hWDates != NULL)
 			{
 				MoveWindow(hWDates, 2 * xMeasure, 0, 8 * xMeasure - xMeasure / 2-2*xMeasure, 7 * yMeasure, TRUE);
-				buttonrectd.left = 0;//he has autism needs to die from thats why we put the values  here
+				buttonrectd.left = 0;//very dump shit dont ask removing it will break more shit
 			buttonrectd.top = DatesRect.top;
 				buttonrectd.right = DatesRect.right / 20;
 				buttonrectd.bottom = pusenjekurca;
@@ -354,11 +354,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		HBRUSH hBrush = { 0 };
 		COLORREF invmonthsbackground = RGB(GetRValue(~monthsbackground), GetGValue(~monthsbackground), GetBValue(~monthsbackground));
 		hBrush = CreateSolidBrush(invmonthsbackground);
-		RECT nigger = { 0 };
-		nigger.right = 2 * xMeasure;
-		nigger.bottom = cyClient;
-		nigger.left = nigger.right - nigger.right / 30;
-		FillRect(hdc, &nigger, hBrush);
+		RECT fillrect = { 0 };
+		fillrect.right = 2 * xMeasure;
+		fillrect.bottom = cyClient;
+		fillrect.left = fillrect.right - fillrect.right / 30;
+		FillRect(hdc, &fillrect, hBrush);
 		DeleteObject(hBrush);
 		ReleaseDC(hwnd, hdc);
 		
@@ -545,7 +545,7 @@ INT_PTR CALLBACK DlgSettingsProc(HWND hwndDlg, UINT message, WPARAM wParam, LPAR
 	int kurcina231523256 = 0;
 	TEXTMETRIC tm = { 0 };
 	HWND bufedit = { 0 };
-	int faggot = 0;
+	int intermittentvar = 0;
 	static HWND hwndDlgMain = { 0 };//When calling controls, you will have hwnddlgs being control handles, and for refference to send message to others controls, you can use this handle which will refference the dialog itself.
 	thehehhe = LOWORD(wParam);
 	switch (message)
@@ -743,7 +743,7 @@ INT_PTR CALLBACK DlgSettingsProc(HWND hwndDlg, UINT message, WPARAM wParam, LPAR
 			RangedDataWipe((int)monthup, (int)monthdown, (int)yearup, (int)yeardown, (int)dayup, (int)daydown);
 			break;
 		case IDCHANGEDATASOURCE:
-			faggot = 1;
+			intermittentvar = 1;
 			OPENFILENAMEA ofna = {
 			ofna.lStructSize = sizeof(OPENFILENAME),
 			ofna.hwndOwner = hwndDlg,
@@ -797,7 +797,7 @@ INT_PTR CALLBACK DlgSettingsProc(HWND hwndDlg, UINT message, WPARAM wParam, LPAR
 						readbuffer[i] = dummy2[0];
 					}
 				}
-				WriteFile(tmpFile, readbuffer, strlen(readbuffer), &faggot, NULL);
+				WriteFile(tmpFile, readbuffer, strlen(readbuffer), &intermittentvar, NULL);
 				CloseHandle(tmpFile);
 			}
 			specialchar[0] = dummy2[0];
@@ -806,7 +806,7 @@ INT_PTR CALLBACK DlgSettingsProc(HWND hwndDlg, UINT message, WPARAM wParam, LPAR
 			HANDLE PUSKURAC = CreateFileA(CRKNIKURVO, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 			memset(CRKNIKURVO, 0, 2000);
 			sprintf_s(CRKNIKURVO, 1000, "%d\n%d\n%d\n%d\n%d\n%d\n\n%d\n%d\n\nDay:%d\nMonth:%d\nYear:%d\n\n%s\n%s\n%d", monthsbuttoncolor, datesbuttoncolor, monthsbackground, datesbackground, textbackground, inputsignalcolor, yearzero, yearzero + yearrange / 12, startday, startmonth, startyear, datasource, specialchar, ordereddatasave);
-			WriteFile(PUSKURAC, CRKNIKURVO, strlen(CRKNIKURVO), &faggot, NULL);
+			WriteFile(PUSKURAC, CRKNIKURVO, strlen(CRKNIKURVO), &intermittentvar, NULL);
 			CloseHandle(PUSKURAC);
 			free(dummy2);
 			break;
@@ -846,32 +846,32 @@ INT_PTR CALLBACK DlgSettingsProc(HWND hwndDlg, UINT message, WPARAM wParam, LPAR
 				break;
 			case IDC_RADIO4://ordereddatasave
 				ordereddatasave = Button_GetCheck(GetDlgItem(hwndDlg, IDC_RADIO4));
-				int static nigger = 1;
+				int static flag27 = 1;
 				if (ordereddatasave == TRUE)
 				{
 					Button_SetCheck(GetDlgItem(hwndDlg, IDC_RADIO4), 0);
 					ordereddatasave = 0;
 				}
-				else if (ordereddatasave == FALSE && nigger == 1)
+				else if (ordereddatasave == FALSE && flag27 == 1)
 				{
-					nigger = 0;
+					flag27 = 0;
 					if (IDYES == MessageBoxA(NULL, "This will re-order current calendar data structure to oldest-to-earliest date", "Re-order data saving", MB_YESNO))
 					{
 						HANDLE PusiKurac = { 0 };
 						PusiKurac = CreateFileA(datasource, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 						char* myreadbuffer = { 0 };
-						int faggotlength = GetFileSize(PusiKurac, NULL);
-						myreadbuffer = calloc(faggotlength+10, sizeof(char));
+						int stringlength19 = GetFileSize(PusiKurac, NULL);
+						myreadbuffer = calloc(stringlength19 +10, sizeof(char));
 						int sonofabitch = 0;
-						ReadFile(PusiKurac, myreadbuffer, faggotlength, &sonofabitch, NULL);
+						ReadFile(PusiKurac, myreadbuffer, stringlength19, &sonofabitch, NULL);
 						myreadbuffer = DataSaveReordering(myreadbuffer);
 						OVERLAPPED ofn = { 0 };
 						ofn.Offset = 0;
-						WriteFile(PusiKurac, myreadbuffer, faggotlength, &sonofabitch, &ofn);
+						WriteFile(PusiKurac, myreadbuffer, stringlength19, &sonofabitch, &ofn);
 						Button_SetCheck(GetDlgItem(hwndDlg, IDC_RADIO4), 1);
 						ordereddatasave = 1;
 					}
-					nigger = 1;
+					flag27 = 1;
 				}
 				char * tempstring = calloc(1000, sizeof(char));
 				sprintf_s(tempstring, 1000, "%sCalendar.dat", theworkingdirectory);
@@ -932,13 +932,13 @@ BOOL RangedDataWipe(int monthup, int monthdown, int yearup, int yeardown, int da
 		return FALSE;
 	if (FALSE == ReadFile(hFile, readbuffer, (DWORD)amountread, NULL, &overlapstruct))
 	{
-		int errorniggas = GetLastError();
-		if ((amountread != 0) && (errorniggas != 38))//if amountread is 0, that means file is empty, hence why error was thrown.
+		int errorvalue = GetLastError();
+		if ((amountread != 0) && (errorvalue != 38))//if amountread is 0, that means file is empty, hence why error was thrown.
 		{
 			CloseHandle(hFile);
 			return FALSE;
 		}
-		else if (errorniggas == 38 && amountread > 0)//the amountread is not empty but the date itself is empty and standing at the border of EOF, effectively offset is at EOF, we fix this by doing nothing 
+		else if (errorvalue == 38 && amountread > 0)//the amountread is not empty but the date itself is empty and standing at the border of EOF, effectively offset is at EOF, we fix this by doing nothing 
 		{
 			;
 		}
@@ -992,10 +992,10 @@ BOOL RangedDataWipe(int monthup, int monthdown, int yearup, int yeardown, int da
 		readbuffer[l] = readbuffer[i];
 	}
 	overlapstruct.Offset = beginninglocation;
-	UINT_PTR faggotbeginninglocation = beginninglocation;
+	UINT_PTR fbeginninglocation = beginninglocation;
 	if ((unsigned)endlocation == oldstringlength)//simply shrink the file to beginning location
 	{
-		SetFilePointer(hFile, beginninglocation, (PLONG)faggotbeginninglocation, FILE_BEGIN);
+		SetFilePointer(hFile, beginninglocation, (PLONG)fbeginninglocation, FILE_BEGIN);
 		SetEndOfFile(hFile);
 	}
 	else 
@@ -1638,12 +1638,12 @@ INT_PTR CALLBACK DlgScriptMacros(HWND hwndDlg, UINT message, WPARAM wParam, LPAR
 		{//check if index is valid
 			if (macrolist[i][0] != '\0')
 			{//if its valid send the appropriate message to signal it to set the data associated with it
-				char nigger[3] = { 0 };
-				nigger[0] = '%';
-				nigger[1] = i;
+				char signalstring[3] = { 0 };
+				signalstring[0] = '%';
+				signalstring[1] = i;
 				//int d = SendMessageA(listbox, LB_SETITEMDATA, b, macrolist[i]);
 				//now set its text that will be shown in the list
-				SendMessageA(listbox, LB_ADDSTRING, b, nigger);
+				SendMessageA(listbox, LB_ADDSTRING, b, signalstring);
 				b++;
 				char* fagshit = calloc(1000, sizeof(char));
 				//SendDlgItemMessageA(ParenthwndDlg, IDC_LIST1, fagshit, 1000);
@@ -1717,15 +1717,15 @@ INT_PTR CALLBACK DlgScriptMacros(HWND hwndDlg, UINT message, WPARAM wParam, LPAR
 			int length = GetWindowTextLengthA(textstring2)+1;
 			char* newstring = calloc(length+2, sizeof(char));
 			GetWindowTextA((textstring2), (newstring), (length));
-			char * absoluteretard = calloc(length+fileszie+10, sizeof(char));
-			memset(absoluteretard, 0, length + fileszie + 10);
-			_memccpy(absoluteretard, macrosymboldata, 0, 3);
-			_memccpy(absoluteretard + 3, newstring, 0, length);
-			absoluteretard[3 + length - 1] = specialchar[0];//close the dataset with the star
-			_memccpy(absoluteretard + 3 + length, readbuffer + frontoffset+2, 0, fileszie - frontoffset);
+			char * memoryvariable = calloc(length+fileszie+10, sizeof(char));
+			memset(memoryvariable, 0, length + fileszie + 10);
+			_memccpy(memoryvariable, macrosymboldata, 0, 3);
+			_memccpy(memoryvariable + 3, newstring, 0, length);
+			memoryvariable[3 + length - 1] = specialchar[0];//close the dataset with the star
+			_memccpy(memoryvariable + 3 + length, readbuffer + frontoffset+2, 0, fileszie - frontoffset);
 			int datachange = (frontoffset - firstoffset) - (length+1);
 			int amounttowrite = fileszie - firstoffset - datachange;
-			WriteFile(hFile, absoluteretard, amounttowrite, NULL, &overlapstruct);
+			WriteFile(hFile, memoryvariable, amounttowrite, NULL, &overlapstruct);
 			if (datachange > 0)
 			{//shrinkfile
 				SetFilePointer(hFile, -datachange, 0, FILE_END);
@@ -1734,17 +1734,17 @@ INT_PTR CALLBACK DlgScriptMacros(HWND hwndDlg, UINT message, WPARAM wParam, LPAR
 			//update the macrolist
 			if (macrolist[selection][0] == 0)//macro not present, add it
 			{
-				char* faggotchars = calloc(5, sizeof(char));
-				faggotchars[0] = '%';
-				faggotchars[1] = selection;
-				SendMessageA(listbox, LB_ADDSTRING, 0, faggotchars);
-				free(faggotchars);
+				char* charsstring = calloc(5, sizeof(char));
+				charsstring[0] = '%';
+				charsstring[1] = selection;
+				SendMessageA(listbox, LB_ADDSTRING, 0, charsstring);
+				free(charsstring);
 			}
 			memset(macrolist[selection], 0, 101);//empty the macro
 			_memccpy(macrolist[selection], newstring, 0, length + 2);
 			CloseHandle(hFile);
 			free(tempstring);
-			free(absoluteretard);
+		//	free(absoluteretard);
 			free(bullshitcancer);
 			free(newstring);
 			return TRUE;
@@ -1753,10 +1753,10 @@ INT_PTR CALLBACK DlgScriptMacros(HWND hwndDlg, UINT message, WPARAM wParam, LPAR
 		case TXTSCRIPTINPUT3://ONE-LETTER MACROBOX
 			if (HIWORD(wParam) == EN_UPDATE)
 			{
-				char* faggot = calloc(100, sizeof(char));
-				Edit_GetText(GetDlgItem(ParenthwndDlg, TXTSCRIPTINPUT3), faggot, 2);
-				selection = (int)faggot[0];
-				free(faggot);
+				char* Remaints = calloc(100, sizeof(char));
+				Edit_GetText(GetDlgItem(ParenthwndDlg, TXTSCRIPTINPUT3), Remaints, 2);
+				selection = (int)Remaints[0];
+				free(Remaints);
 				SetWindowTextA(textstring2, macrolist[selection]);
 			}
 			return TRUE;
@@ -3210,16 +3210,16 @@ int ifstatmentfunction()
 	return TRUE;
 }
 ;//beggining to the end linear simple string comparing
-BOOL comparestrings(char* faggot1, char* faggot2)
+BOOL comparestrings(char* string1, char* string2)
 {
-	int faggot1length = strlen(faggot1);
-	int faggot2length = strlen(faggot2);
-	for (int i = 0; i < faggot1length && i < faggot2length; i++)
+	int string1length = strlen(string1);
+	int string2length = strlen(string2);
+	for (int i = 0; i < string1length && i < string2length; i++)
 	{
-		if (faggot1[i] != faggot2[i])
+		if (string1[i] != string2[i])
 			return TRUE;
 	}
-	if (faggot1length < faggot2length)
+	if (string1length < string2length)
 		return TRUE;
 	return FALSE;
 }
@@ -3230,7 +3230,7 @@ INT_PTR CALLBACK DlgColorWindows(HWND hwndDlg, UINT message, WPARAM wParam, LPAR
 	static COLORREF * button8color = { 0 }, customcolors[20] = { 0 };
 	HDC tempDC = { 0 };
 	static HWND oghwnd = { 0 };
-	static int faggot = 0, filesize = 0; 
+	static int tripval = 0, filesize = 0; 
 	static HFILE hFile = { 0 };
 	static char* tempstring = { 0 };
 	switch (message)
@@ -3255,7 +3255,7 @@ INT_PTR CALLBACK DlgColorWindows(HWND hwndDlg, UINT message, WPARAM wParam, LPAR
 		switch (LOWORD(wParam))
 		{
 		case IDC_BUTTON8://saves the colors
-			if (faggot != 0)
+			if (tripval != 0)
 			{
 				CHOOSECOLORA choosecolor = { 0 };
 				choosecolor.lStructSize = sizeof(CHOOSECOLOR);
@@ -3276,12 +3276,12 @@ INT_PTR CALLBACK DlgColorWindows(HWND hwndDlg, UINT message, WPARAM wParam, LPAR
 				updatelist[6] = TextBoxHwnd;
 				updatelist[7] = GetParent(buttonmarks[0]);
 				*button8color = choosecolor.rgbResult;
-				if (faggot == 6)
+				if (tripval == 6)
 				{
 					SendMessage(TextBoxHwnd, TEXTBOXCOLORCHANGE, 0, 0);
 				}
-				InvalidateRect(updatelist[faggot], NULL, TRUE);
-				UpdateWindow(updatelist[faggot]);
+				InvalidateRect(updatelist[tripval], NULL, TRUE);
+				UpdateWindow(updatelist[tripval]);
 				tempstring = calloc(1000, sizeof(char));
 				sprintf_s(tempstring, 1000, "%sCalendar.dat", theworkingdirectory);
 				hFile = CreateFileA(tempstring, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -3300,37 +3300,37 @@ INT_PTR CALLBACK DlgColorWindows(HWND hwndDlg, UINT message, WPARAM wParam, LPAR
 			button8color = &monthsbuttoncolor;
 			InvalidateRect(colorbutton, NULL, FALSE);
 			UpdateWindow(colorbutton);
-			faggot = 1;
+			tripval = 1;
 			break;
 		case IDC_BUTTON3://day button color
 			button8color = &datesbuttoncolor;
 			InvalidateRect(colorbutton, NULL, TRUE);
 			UpdateWindow(colorbutton);
-			faggot = 3;
+			tripval = 3;
 			break;
 		case IDC_BUTTON4://months background colors
 			button8color = &monthsbackground;
 			InvalidateRect(colorbutton, NULL, TRUE);
 			UpdateWindow(colorbutton);
-			faggot = 4;
+			tripval = 4;
 			break;
 		case IDC_BUTTON5://days background colors
 			button8color = &datesbackground;
 			InvalidateRect(colorbutton, NULL, TRUE);
 			UpdateWindow(colorbutton);
-			faggot = 5;
+			tripval = 5;
 			break;
 		case IDC_BUTTON6://textbox background color
 			button8color = &textbackground;
 			InvalidateRect(colorbutton, NULL, TRUE);
 			UpdateWindow(colorbutton);
-			faggot = 6;
+			tripval = 6;
 			break;
 		case IDC_BUTTON7://input signal color
 			button8color = &inputsignalcolor;
 			InvalidateRect(colorbutton, NULL, TRUE);
 			UpdateWindow(colorbutton);
-			faggot = 7;
+			tripval = 7;
 			break;
 		case IDOK:
 		case IDCANCEL:
@@ -3620,7 +3620,6 @@ char* DataSaveReordering(char* readbuffer)
 	return readbuffer;
 }
 
-/*nigga Standard */
 int NearestDate(int mflag, int filesize, char* readbuffer, int* appendindexlocation, char* dateset, int i)
 {
 	int yearchars = strlen(dateset + 7) - 1;//-1 removes the star at the end 

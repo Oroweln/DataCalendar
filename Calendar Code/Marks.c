@@ -25,8 +25,8 @@ LRESULT CALLBACK MarkProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	PAINTSTRUCT ps;
 	TEXTMETRIC tm;
 	HANDLE MarksFile = { 0 };
-	HBRUSH hBrush = { 0 };
-	static BOOL retardflag = FALSE;
+	HBRUSH hBrush = { 0 };//retard
+	static BOOL Flag68 = FALSE;
 	int yearmonthindex = 0;
 
 	OVERLAPPED overlapstruct = { 0 };
@@ -155,7 +155,7 @@ LRESULT CALLBACK MarkProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 		return 0; 
 	case MARK_DATESIGNAL:
-		retardflag = TRUE;
+		Flag68 = TRUE;
 		return 0;
 	case WM_SHOWWINDOW:
 	case WM_PAINT:
@@ -163,7 +163,7 @@ LRESULT CALLBACK MarkProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 		RECT WindowSize = { 0,0,0,0 };
 		GetClientRect(hwnd, &WindowSize);
-		if (retardflag == TRUE)
+		if (Flag68 == TRUE)
 		{
 			hBrush = CreateSolidBrush(inputsignalcolor);
 		}
@@ -266,7 +266,7 @@ HWND CreateButtonMk(LPWSTR szString, RECT Size, HWND hwnd, int index)
 
 LRESULT CALLBACK ButtonProcMk(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	static BOOL faggot = TRUE;
+	static BOOL flag56 = TRUE;
 	PAINTSTRUCT ps = { 0 };
 	HDC hdc = NULL;
 	RECT daterectn = { 0 };
@@ -353,7 +353,7 @@ LRESULT CALLBACK ButtonProcMk(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPa
 				}
 			}
 		}
-		if (WindowIndex == 2)//Buttons bar nigga
+		if (WindowIndex == 2)//Buttons bar
 			DataUpdateRect = ButtonsBarFunction(LocalRect, hdc, hwnd, &step, DataUpdateRect);
 		EndPaint(hwnd, &ps);
 		return 0;
@@ -814,9 +814,9 @@ RECT buttonswindow(HWND hwnd, POINT mypt)
 		SetClipboardData(CF_TEXT, clipmemory);
 		CloseClipboard();
 		GetClientRect(GetParent(hwnd), &LocalRect);
-		HDC faggot = GetDC(GetParent(DatesHwnd));
-		TextOutA(faggot, LocalRect.right / 2, LocalRect.top / 2, "Copied Live Time!", 18);
-		ReleaseDC(GetParent(DatesHwnd), faggot);
+		HDC stupidhdc = GetDC(GetParent(DatesHwnd));
+		TextOutA(stupidhdc, LocalRect.right / 2, LocalRect.top / 2, "Copied Live Time!", 18);
+		ReleaseDC(GetParent(DatesHwnd), stupidhdc);
 		puskawetathr = GetLastError();
 		
 		InvalidateRect(hwnd, &TempRect2, TRUE);
@@ -1033,7 +1033,7 @@ void RGBDatatxtUpdate(char * filebuffer, int realindex, int selectedcolor, int f
 
 RECT ButtonsBarFunction(RECT LocalRect, HDC hdc, HWND hwnd, int * step, RECT DataUpdateRect)
 {
-	static BOOL faggot = TRUE;
+	static BOOL staticbool2 = TRUE;
 	SYSTEMTIME sTime = { 0 };
 	HBRUSH hBrush = { 0 };
 	RECT TempRect = { 0 };
@@ -1059,10 +1059,10 @@ RECT ButtonsBarFunction(RECT LocalRect, HDC hdc, HWND hwnd, int * step, RECT Dat
 	SetTextColor(hdc, RGB(150, 150, 150));
 	DrawTextA(hdc, mytimedata, -1, &TempRect, DT_TOP | DT_LEFT);
 	FrameRect(hdc, &TempRect, frameBrush);
-	if (faggot == TRUE)
+	if (staticbool2 == TRUE)
 	{
 		SetTimer(hwnd, 1, USER_TIMER_MINIMUM / 10, Timerproc);
-		faggot = FALSE;
+		staticbool2 = FALSE;
 	}
 
 	//Date Selected

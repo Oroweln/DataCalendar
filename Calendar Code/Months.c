@@ -176,11 +176,11 @@ LRESULT CALLBACK MonthsProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 		hdc = GetDC(hwnd);
 		COLORREF invmonthsbackground = RGB(GetRValue(~monthsbackground), GetGValue(~monthsbackground), GetBValue(~monthsbackground));
 		hBrush = CreateSolidBrush(invmonthsbackground);
-		RECT nigger = { 0 };
-		nigger.right = cxClient;
-		nigger.bottom = cyClient;
-		nigger.left = nigger.right - nigger.right / 30;
-		FillRect(hdc, &nigger, hBrush);
+		RECT monthsrect = { 0 };
+		monthsrect.right = cxClient;
+		monthsrect.bottom = cyClient;
+		monthsrect.left = monthsrect.right - monthsrect.right / 30;
+		FillRect(hdc, &monthsrect, hBrush);
 		DeleteObject(hBrush);
 		ReleaseDC(hwnd, hdc);
 		return 0;
