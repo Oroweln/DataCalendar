@@ -34,7 +34,7 @@ long long pchinputbuffermemory = 30 * 500;
 BOOL TextBoxFlag = FALSE;//Signal, its only on and only when you click dates or month
 BOOL TextBoxCalFlag = FALSE;//Signal, its only on and only on when you click Month
 
-char* ScriptFormat(char* Inputbuffer, HWND parenthwnd);
+char* ScriptFormat(char* Inputbuffer);
 INT_PTR CALLBACK DlgSettingsProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam);
 INT_PTR CALLBACK BufTextProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 INT_PTR CALLBACK DlgHelpAndInfoProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam);
@@ -52,7 +52,7 @@ char* monthrange(int filesize, char* readbuffer, char* dateset, int* appendindex
 BOOL CalendarCreate(BOOL RealorCustom, int startyear, int newyearrange);
 char* whcararryinputroutine(char* wchararray, int* dateprint, int monthtype, int y);
 char* monthtypegen(char* wchararray, int dateyear, int datemonth, int * monthtype, int* thirty, int* leap, int* thirtyone);
-char* MacroFormating(char* macroformated, HWND parenthwnd, BOOL firstrun);
+char* MacroFormating(char* macroformated, BOOL firstrun);
 int NumbersFunction(int* symbolsarray, int maxsymbols, char* macroformated, int numbersbegginingindex, BOOL FloatFlag, int * lastbyteindex);
 BOOL comparestrings(char* string1, char* string2);
 
@@ -64,6 +64,9 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstances,
 	HWND hwnd = { 0 };
 	MSG msg;
 	static TCHAR MenuName[] = TEXT("MyMenu");
+	int g = 0;
+	if (pCmdLine == NULL || hPrevInstances == NULL)
+		g = 1;
 
 	int myoffset = GetModuleFileNameA(NULL, theworkingdirectory, 1000);
 	for (int f = myoffset; f > 0 && theworkingdirectory[f] != '\\'; f--)
@@ -119,6 +122,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	TEXTMETRIC tm = { 0 };
 	static HWND hWMonths = NULL, hWTextBox = NULL, hWMarks = NULL, hWDates = NULL;
 	static BOOL CreationFlag = FALSE; //False if childwindows have not been created, true if they where.
+	BOOL readflag = FALSE;
 	static HINSTANCE hInstance;
 	char* pusikurac = { 0 };
 	PAINTSTRUCT ps = { 0 };
@@ -159,13 +163,18 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		TextHeapRemaining = 15000;//Default 15000 bytes allocation, TextHeap will also account for y pointers.
 		//load window colors
-		HFILE hFile = { 0 };
+		HANDLE hFile = { 0 };
 		char* tempstring = calloc(1000, sizeof(char));
+		if (tempstring == NULL)
+		{
+			CrashDumpFunction(1170, 1);
+			return FALSE;
+		}
 		sprintf_s(tempstring, 1000, "%sCalendar.dat", theworkingdirectory);
 		hFile = CreateFileA(tempstring, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-		if(hFile == -1)
+		if(hFile < 0)
 			hFile = CreateFileA(tempstring, GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
-		int filesize = GetFileSize(hFile, NULL);
+		DWORD filesize = GetFileSize(hFile, NULL);
 		if(filesize > 0)//read data file contents and update the global variables necessary
 		{//use the numeration for windows colors dialog to order the colors
 			/*1 - monthbutton
@@ -174,13 +183,33 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			5-daysbackground
 			6-textbox color
 			7- input signal color*/
-			int templength = 0;
-			tempstring = realloc(tempstring, filesize + 10);
+			size_t templength = 0;
+			char* totaltemp = NULL;
+			if (tempstring == 0)
+				CrashDumpFunction(3, 0);
+			totaltemp = realloc(tempstring, filesize + 10);
+			if (totaltemp == 0)
+				CrashDumpFunction(3, 0);
+			tempstring = totaltemp;
+			if (tempstring == 0)
+			{
+				CrashDumpFunction(3, 0);
+				return 0;
+			}
 			memset(tempstring, 0, filesize+5);
-			ReadFile(hFile, tempstring, filesize, &filesize, NULL);
+			readflag = ReadFile(hFile, tempstring, filesize, &filesize, NULL);
+			if (readflag == FALSE)
+				CrashDumpFunction(2, 0);
 			//the windowscolorsdat separates datasets by newlines
 			char* tempstring2 = calloc(filesize+100, sizeof(char));
+			if (tempstring2 == 0)
+				CrashDumpFunction(3, 0);
 			_memccpy(tempstring2, tempstring, '\n', filesize);
+			if (tempstring2 == 0)
+			{
+				CrashDumpFunction(3, 0);
+				return 0;
+			}
 			monthsbuttoncolor = StrToIntA(tempstring2);
 			templength = strlen(tempstring2);
 			memset(tempstring2, 0, filesize);
@@ -226,7 +255,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			memset(tempstring2, 0, filesize);
 			int maxcount = min(filesize, 2000);
 			_memccpy(datasource, tempstring + templength, '\n', maxcount);
-			int stringlength20 = strlen(datasource);
+			size_t stringlength20 = strlen(datasource);
 			datasource[stringlength20 -1] = 0;
 			templength += stringlength20;
 			_memccpy(specialchar, tempstring + templength, '\n', filesize - templength);
@@ -239,14 +268,14 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		else//if dat file doesnt exist
 		{
 			SYSTEMTIME mytime = { 0 };
-			GetSystemTime(&mytime); char* sourcedata;
+			GetSystemTime(&mytime);
 			yearzero = mytime.wYear - 50;
 			yearrange = 1200;//yearrange is expressed in months
 			sprintf_s(datasource, 2000, "%sTextdata.txt", theworkingdirectory);//by default datasource is at the working directory
 			specialchar[0] = '*';
 			memset(tempstring, 0, 1000);
-			sprintf_s(tempstring, 1000, "%d\n%d\n%d\n%d\n%d\n%d\n\n%d\n%d\n\nDay:%d\nMonth:%d\nYear:%d\n\n%s\n%s\n%d", monthsbuttoncolor, datesbuttoncolor, monthsbackground, datesbackground, textbackground, inputsignalcolor, yearzero, yearzero + yearrange / 12, startday, startmonth, startyear, datasource, specialchar, ordereddatasave);
-			WriteFile(hFile, tempstring, strlen(tempstring), &filesize, NULL);
+			sprintf_s(tempstring, 1000, "%lu\n%lu\n%lu\n%lu\n%lu\n%lu\n\n%d\n%d\n\nDay:%d\nMonth:%d\nYear:%d\n\n%s\n%s\n%d", monthsbuttoncolor, datesbuttoncolor, monthsbackground, datesbackground, textbackground, inputsignalcolor, (int)yearzero, (int)(yearzero + yearrange / 12), startday, startmonth, startyear, datasource, specialchar, ordereddatasave);
+			WriteFile(hFile, tempstring, (DWORD)strlen(tempstring), &filesize, NULL);
 		}
 		free(tempstring);
 		if (hFile > 0)
@@ -291,7 +320,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			{
 				hWMonths = CreateWindowEx(0, TEXT("Months class"), TEXT("Months"), WS_CHILD, 0, 0, 0,0, hwnd, NULL, NULL, NULL);
 				//hWTextBox = CreateWindowEx(0, TEXT("EDIT"), NULL, WS_CHILD | ES_LEFT | ES_MULTILINE | ES_WANTRETURN | WS_VSCROLL | WS_HSCROLL | WS_DISABLED | ES_AUTOVSCROLL, 0,0,0,0, hwnd, NULL, NULL, NULL);
-				hWTextBox = CreateDialogW(GetModuleHandle(NULL), TEXTBOXDIALOG, hwnd, TextBoxProc);
+				hWTextBox = CreateDialogW(GetModuleHandle(NULL), MAKEINTRESOURCE(TEXTBOXDIALOG), hwnd, TextBoxProc);
 				hWDates = CreateWindowEx(0, TEXT("Dates Class"), TEXT("Dates"), WS_CHILD | WS_DISABLED, 0,0,0,0, hwnd, NULL, NULL, NULL);
 				buttonrectd.left = 0;//very dump shit dont ask removing it will break more shit
 				buttonrectd.top = DatesRect.top;
@@ -410,14 +439,14 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		pusikurac = calloc(1000, sizeof(char));
 		sprintf_s(pusikurac, 1000, "%sCalendar.dat", theworkingdirectory);
 		hFile = CreateFileA(pusikurac, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-		if (hFile == -1)
+		if (hFile < 0)
 			hFile = CreateFileA(pusikurac, GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
 		SetFilePointer(hFile, 0, NULL, FILE_BEGIN);
 		SetEndOfFile(hFile);
 		char* writebuffer = calloc(3000, sizeof(char));
-		sprintf_s(writebuffer, 3000, "%d\n%d\n%d\n%d\n%d\n%d\n\n%d\n%d\n\nDay:%d\nMonth:%d\nYear:%d\n\n%s\n%s\n%d", monthsbuttoncolor, datesbuttoncolor, monthsbackground, datesbackground, textbackground, inputsignalcolor, yearzero, yearzero + yearrange / 12, startday, startmonth, startyear,datasource, specialchar, ordereddatasave);
-		int* retardbudala = { 0 };
-		WriteFile(hFile, writebuffer, strlen(writebuffer), retardbudala, NULL);
+		sprintf_s(writebuffer, 3000, "%lu\n%lu\n%lu\n%lu\n%lu\n%lu\n\n%d\n%d\n\nDay:%d\nMonth:%d\nYear:%d\n\n%s\n%s\n%d", monthsbuttoncolor, datesbuttoncolor, monthsbackground, datesbackground, textbackground, inputsignalcolor, yearzero, yearzero + yearrange / 12, startday, startmonth, startyear,datasource, specialchar, ordereddatasave);
+		DWORD tempvar60 = { 0 };
+		WriteFile(hFile, writebuffer, (DWORD)strlen(writebuffer), &tempvar60, NULL);
 		CloseHandle(hFile);
 		DestroyWindow(hWTextBox);
 		HeapDestroy(myHeap);
@@ -536,18 +565,17 @@ INT_PTR CALLBACK DlgSettingsProc(HWND hwndDlg, UINT message, WPARAM wParam, LPAR
 {
 	static HWND BuftxtProc = { 0 };
 	static int thehehhe = 0, cyChar = 0;
-	int jebanjeubulju = 0;
 	static long long monthup = 0, monthdown = 0, yearup = 0, yeardown = 0, dayup = 0, daydown = 0;
 	char* dummy2 = NULL;
-	int bolimukarc = 0;
+	DWORD TempDword1 = 0;
 	HDC hdc = { 0 };
 	BOOL failcheck = TRUE;
-	int kurcina231523256 = 0;
 	TEXTMETRIC tm = { 0 };
-	HWND bufedit = { 0 };
-	int intermittentvar = 0;
+	DWORD intermittentvar = 0;
 	static HWND hwndDlgMain = { 0 };//When calling controls, you will have hwnddlgs being control handles, and for refference to send message to others controls, you can use this handle which will refference the dialog itself.
 	thehehhe = LOWORD(wParam);
+	if (lParam == 0)
+		TempDword1 = 0;
 	switch (message)
 	{
 	case WM_INITDIALOG:
@@ -599,7 +627,8 @@ INT_PTR CALLBACK DlgSettingsProc(HWND hwndDlg, UINT message, WPARAM wParam, LPAR
 				}
 				Edit_LimitText(TextBoxInput, pchinputbuffermemory);
 				TextHeapRemaining = pchinputbuffermemory - memoryused;
-				if (TextHeapRemaining < 0)
+				__int64 heapdifference = pchinputbuffermemory - memoryused;
+				if (heapdifference < 0)
 					CrashDumpFunction(10000, 1);//this means you allocated less memory then you are using.
 				InvalidateRect(buttonmarks[2], NULL, TRUE);
 				UpdateWindow(buttonmarks[2]);
@@ -770,44 +799,45 @@ INT_PTR CALLBACK DlgSettingsProc(HWND hwndDlg, UINT message, WPARAM wParam, LPAR
 			ofna.FlagsEx = 0
 			};
 			GetOpenFileNameA(&ofna);
-			int kurcina24142 = 0;
+			DWORD tempvar50 = 0;
 			char* tempstring2 = calloc(2000, sizeof(char));
 			sprintf_s(tempstring2, 2000, "%sCalendar.dat", theworkingdirectory);
 			HANDLE hFile = CreateFileA(tempstring2, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 			memset(tempstring2, 0, 2000);
-			sprintf_s(tempstring2, 1000, "%d\n%d\n%d\n%d\n%d\n%d\n\n%d\n%d\n\nDay:%d\nMonth:%d\nYear:%d\n\n%s\n%s\n%d", monthsbuttoncolor, datesbuttoncolor, monthsbackground, datesbackground, textbackground, inputsignalcolor, yearzero, yearzero + yearrange / 12, startday, startmonth, startyear, datasource, specialchar, ordereddatasave);
-			WriteFile(hFile, tempstring2, strlen(tempstring2), &kurcina24142, NULL);
+			sprintf_s(tempstring2, 1000, "%lu\n%lu\n%lu\n%lu\n%lu\n%lu\n\n%d\n%d\n\nDay:%d\nMonth:%d\nYear:%d\n\n%s\n%s\n%d", monthsbuttoncolor, datesbuttoncolor, monthsbackground, datesbackground, textbackground, inputsignalcolor, yearzero, yearzero + yearrange / 12, startday, startmonth, startyear, datasource, specialchar, ordereddatasave);
+			WriteFile(hFile, tempstring2, (DWORD)strlen(tempstring2), &tempvar50, NULL);
 			CloseHandle(hFile);
 			free(tempstring2);
 			break;
 		case IDSPECIALCHAR:
 			dummy2 = calloc(2, sizeof(char));
 			GetDlgItemTextA(hwndDlgMain, EDITSCHAR, dummy2, 2);
-			if (IDYES == MessageBox(hwndDlgMain, "Do you want to change all special characters within the data set to the new special character?", "Special Character change", MB_YESNO))
+			if (IDYES == MessageBoxA(hwndDlgMain, "Do you want to change all special characters within the data set to the new special character?", "Special Character change", MB_YESNO))
 			{
 				HANDLE tmpFile = CreateFileA(datasource, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 				int fsize = GetFileSize(tmpFile, NULL);
 				char* readbuffer = calloc(fsize, sizeof(char));
-				int fagnumber = 0;
-				ReadFile(tmpFile, readbuffer, fsize, &fagnumber, NULL);
-				for (int i = 0; i < fagnumber; i++)
+				DWORD tempvar100 = 0;
+				if (FALSE == ReadFile(tmpFile, readbuffer, fsize, &tempvar100, NULL))
+					CrashDumpFunction(1814, 1);
+				for (DWORD i = 0; i < tempvar100; i++)
 				{
 					if(readbuffer[i] == specialchar[0])
 					{
 						readbuffer[i] = dummy2[0];
 					}
 				}
-				WriteFile(tmpFile, readbuffer, strlen(readbuffer), &intermittentvar, NULL);
+				WriteFile(tmpFile, readbuffer, (DWORD)strlen(readbuffer), &intermittentvar, NULL);
 				CloseHandle(tmpFile);
 			}
 			specialchar[0] = dummy2[0];
-			char* CRKNIKURVO = calloc(2000, sizeof(char));
-			sprintf_s(CRKNIKURVO, 2000, "%sCalendar.dat", theworkingdirectory);
-			HANDLE PUSKURAC = CreateFileA(CRKNIKURVO, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-			memset(CRKNIKURVO, 0, 2000);
-			sprintf_s(CRKNIKURVO, 1000, "%d\n%d\n%d\n%d\n%d\n%d\n\n%d\n%d\n\nDay:%d\nMonth:%d\nYear:%d\n\n%s\n%s\n%d", monthsbuttoncolor, datesbuttoncolor, monthsbackground, datesbackground, textbackground, inputsignalcolor, yearzero, yearzero + yearrange / 12, startday, startmonth, startyear, datasource, specialchar, ordereddatasave);
-			WriteFile(PUSKURAC, CRKNIKURVO, strlen(CRKNIKURVO), &intermittentvar, NULL);
-			CloseHandle(PUSKURAC);
+			char* tempstring8 = calloc(2000, sizeof(char));
+			sprintf_s(tempstring8, 2000, "%sCalendar.dat", theworkingdirectory);
+			HANDLE TempHandle2 = CreateFileA(tempstring8, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+			memset(tempstring8, 0, 2000);
+			sprintf_s(tempstring8, 1000, "%lu\n%lu\n%lu\n%lu\n%lu\n%lu\n\n%d\n%d\n\nDay:%d\nMonth:%d\nYear:%d\n\n%s\n%s\n%d", monthsbuttoncolor, datesbuttoncolor, monthsbackground, datesbackground, textbackground, inputsignalcolor, yearzero, yearzero + yearrange / 12, startday, startmonth, startyear, datasource, specialchar, ordereddatasave);
+			WriteFile(TempHandle2, tempstring8, (DWORD)strlen(tempstring8), &intermittentvar, NULL);
+			CloseHandle(TempHandle2);
 			free(dummy2);
 			break;
 		default: 
@@ -823,11 +853,16 @@ INT_PTR CALLBACK DlgSettingsProc(HWND hwndDlg, UINT message, WPARAM wParam, LPAR
 				Button_SetCheck(GetDlgItem(hwndDlg, IDC_RADIO3), 0);//rtf format
 				Button_SetCheck(GetDlgItem(hwndDlg, IDC_RADIO2), 1);//txt format
 				char* tempstring2 = calloc(2000, sizeof(char));
+				if (tempstring2 == NULL)
+				{
+					CrashDumpFunction(1849, 1);
+					return FALSE;
+				}
 				sprintf_s(tempstring2, 2000, "%sCalendar.dat", theworkingdirectory);
 				HANDLE hFile = CreateFileA(tempstring2, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 				memset(tempstring2, 0, 2000);
-				sprintf_s(tempstring2, 1000, "%d\n%d\n%d\n%d\n%d\n%d\n\n%d\n%d\n\nDay:%d\nMonth:%d\nYear:%d\n\n%s\n%s\n%d", monthsbuttoncolor, datesbuttoncolor, monthsbackground, datesbackground, textbackground, inputsignalcolor, yearzero, yearzero + yearrange / 12, startday, startmonth, startyear, datasource, specialchar, ordereddatasave);
-				WriteFile(hFile, tempstring2, strlen(tempstring2), &bolimukarc, NULL);
+				sprintf_s(tempstring2, 1000, "%lu\n%lu\n%lu\n%lu\n%lu\n%lu\n\n%d\n%d\n\nDay:%d\nMonth:%d\nYear:%d\n\n%s\n%s\n%d", monthsbuttoncolor, datesbuttoncolor, monthsbackground, datesbackground, textbackground, inputsignalcolor, yearzero, yearzero + yearrange / 12, startday, startmonth, startyear, datasource, specialchar, ordereddatasave);
+				WriteFile(hFile, tempstring2, (DWORD)strlen(tempstring2), &TempDword1, NULL);
 				CloseHandle(hFile);
 				free(tempstring2);
 				break;
@@ -835,14 +870,19 @@ INT_PTR CALLBACK DlgSettingsProc(HWND hwndDlg, UINT message, WPARAM wParam, LPAR
 				RTForTXT = 0;
 				Button_SetCheck(GetDlgItem(hwndDlg, IDC_RADIO3), 1);
 				Button_SetCheck(GetDlgItem(hwndDlg, IDC_RADIO2), 0);
-				char* tempstring25215213 = calloc(2000, sizeof(char));
-				sprintf_s(tempstring25215213, 2000, "%sCalendar.dat", theworkingdirectory);
-				hFile = CreateFileA(tempstring25215213, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-				memset(tempstring25215213, 0, 2000);
-				sprintf_s(tempstring25215213, 1000, "%d\n%d\n%d\n%d\n%d\n%d\n\n%d\n%d\n\nDay:%d\nMonth:%d\nYear:%d\n\n%s\n%s\n%d", monthsbuttoncolor, datesbuttoncolor, monthsbackground, datesbackground, textbackground, inputsignalcolor, yearzero, yearzero + yearrange / 12, startday, startmonth, startyear, datasource, specialchar, ordereddatasave);
-				WriteFile(hFile, tempstring25215213, strlen(tempstring25215213), &bolimukarc, NULL);
+				char* radio3string = calloc(2000, sizeof(char));
+				if (radio3string == NULL)
+				{
+					CrashDumpFunction(1868, 1);
+					return 0;
+				}
+				sprintf_s(radio3string, 2000, "%sCalendar.dat", theworkingdirectory);
+				hFile = CreateFileA(radio3string, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+				memset(radio3string, 0, 2000);
+				sprintf_s(radio3string, 1000, "%lu\n%lu\n%lu\n%lu\n%lu\n%lu\n\n%d\n%d\n\nDay:%d\nMonth:%d\nYear:%d\n\n%s\n%s\n%d", monthsbuttoncolor, datesbuttoncolor, monthsbackground, datesbackground, textbackground, inputsignalcolor, yearzero, yearzero + yearrange / 12, startday, startmonth, startyear, datasource, specialchar, ordereddatasave);
+				WriteFile(hFile, radio3string, (DWORD)strlen(radio3string), &TempDword1, NULL);
 				CloseHandle(hFile);
-				free(tempstring25215213);
+				free(radio3string);
 				break;
 			case IDC_RADIO4://ordereddatasave
 				ordereddatasave = Button_GetCheck(GetDlgItem(hwndDlg, IDC_RADIO4));
@@ -861,27 +901,44 @@ INT_PTR CALLBACK DlgSettingsProc(HWND hwndDlg, UINT message, WPARAM wParam, LPAR
 						PusiKurac = CreateFileA(datasource, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 						char* myreadbuffer = { 0 };
 						int stringlength19 = GetFileSize(PusiKurac, NULL);
-						myreadbuffer = calloc(stringlength19 +10, sizeof(char));
-						int sonofabitch = 0;
-						ReadFile(PusiKurac, myreadbuffer, stringlength19, &sonofabitch, NULL);
+						myreadbuffer = calloc(stringlength19 + 10, sizeof(char));
+						DWORD DwordTemp3 = 0;
+						DwordTemp3 = ReadFile(PusiKurac, myreadbuffer, stringlength19, &DwordTemp3, NULL);
+						if (DwordTemp3 == 0)
+						{
+							CrashDumpFunction(1900, 0);
+							free(myreadbuffer);
+							return false;
+						}
 						myreadbuffer = DataSaveReordering(myreadbuffer);
 						OVERLAPPED ofn = { 0 };
 						ofn.Offset = 0;
-						WriteFile(PusiKurac, myreadbuffer, stringlength19, &sonofabitch, &ofn);
+						WriteFile(PusiKurac, myreadbuffer, stringlength19, &DwordTemp3, &ofn);
 						Button_SetCheck(GetDlgItem(hwndDlg, IDC_RADIO4), 1);
 						ordereddatasave = 1;
 					}
 					flag27 = 1;
 				}
-				char * tempstring = calloc(1000, sizeof(char));
+				char* tempstring = calloc(1000, sizeof(char));
+				if (tempstring == NULL)
+				{
+					CrashDumpFunction(1915, 1);
+					return FALSE;
+				}
 				sprintf_s(tempstring, 1000, "%sCalendar.dat", theworkingdirectory);
 				hFile = CreateFileA(tempstring, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-				int filesize = GetFileSize(hFile, NULL);
+				DWORD filesize = GetFileSize(hFile, NULL);
 				char* writebuffer = calloc(3000, sizeof(char));
+				if (writebuffer == NULL)
+				{
+					free(tempstring);
+					CrashDumpFunction(1926, 1);
+					return FALSE;
+				}
 				SetFilePointer(hFile, 0, NULL, FILE_BEGIN);
 				SetEndOfFile(hFile);
-				sprintf_s(tempstring, 1000, "%d\n%d\n%d\n%d\n%d\n%d\n\n%d\n%d\n\nDay:%d\nMonth:%d\nYear:%d\n\n%s\n%s\n%d", monthsbuttoncolor, datesbuttoncolor, monthsbackground, datesbackground, textbackground, inputsignalcolor, yearzero, yearzero + yearrange / 12, startday, startmonth, startyear, datasource, specialchar, ordereddatasave);
-				WriteFile(hFile, writebuffer, strlen(writebuffer), &filesize, NULL);
+				sprintf_s(tempstring, 1000, "%lu\n%lu\n%lu\n%lu\n%lu\n%lu\n\n%d\n%d\n\nDay:%d\nMonth:%d\nYear:%d\n\n%s\n%s\n%d", monthsbuttoncolor, datesbuttoncolor, monthsbackground, datesbackground, textbackground, inputsignalcolor, yearzero, yearzero + yearrange / 12, startday, startmonth, startyear, datasource, specialchar, ordereddatasave);
+				WriteFile(hFile, writebuffer, (DWORD)strlen(writebuffer), &filesize, NULL);
 				if (hFile > 0)
 					CloseHandle(hFile);
 				free(tempstring);
@@ -1010,10 +1067,10 @@ BOOL RangedDataWipe(int monthup, int monthdown, int yearup, int yeardown, int da
 //
 char * findthenearestdate(int filesize, char * readbuffer, char * dateset, int * appendindexlocation, int flag)
 {
-	int mflag = 0, i = 0, escapeflag = 0;
+	int mflag = 0, i = 0;
 
 	//scan for the year dataset range
-	int yearchars = strlen(dateset + 7)-1;//-1 removes the star at the end
+	int yearchars = (int)strlen(dateset + 7)-1;//-1 removes the star at the end
 	int yeardate = StrToIntA(dateset + 7);
 	int monthdate = StrToIntA(dateset + 4);
 	int daydate = StrToIntA(dateset + 1);
@@ -1025,7 +1082,7 @@ char * findthenearestdate(int filesize, char * readbuffer, char * dateset, int *
 			char tempyearstring[20] = { 0 };
 			int yeartemp = StrToIntA(readbuffer + k + 7);
 			_itoa_s(yeartemp, tempyearstring, 20, 10);
-			int yeartemplength = strlen(tempyearstring);
+			int yeartemplength = (int)strlen(tempyearstring);
 			int monthtemp = StrToIntA(readbuffer + k + 4);
 			int daytemp = StrToIntA(readbuffer + k + 1);
 			for (int l = 7; yeartemplength == yearchars && readbuffer[k + l] == dateset[l] && dateset[l] != specialchar[0]; l++)
@@ -1133,8 +1190,11 @@ char * findthenearestdate(int filesize, char * readbuffer, char * dateset, int *
 	//input the date at the right place, in between the nearest larger and nearest smaller date.	
 	if(flag == 0)
 		return DateInput(mflag, filesize, readbuffer, appendindexlocation, dateset, i);//for ranged data wipe
-	if(flag == 1)
-		return NearestDate(mflag, filesize, readbuffer, appendindexlocation, dateset, i);//for ordered data inpu
+	else
+	{
+		NearestDate(mflag, filesize, readbuffer, appendindexlocation, dateset, i);//for ordered data input
+		return readbuffer + *appendindexlocation;
+	}
 }
 
 //Return value will be set by functions and handled then case-by-case
@@ -1171,6 +1231,9 @@ void CrashDumpFunction(int return_value, int fatality)
 
 INT_PTR CALLBACK DlgHelpAndInfoProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
+	char tempvar = 0;
+	if (lParam == 0)
+		tempvar = 1;
 	switch (message)
 	{
 	case WM_COMMAND:
@@ -1189,7 +1252,7 @@ INT_PTR CALLBACK DlgHelpAndInfoProc(HWND hwndDlg, UINT message, WPARAM wParam, L
 
 char* DateInput(int mflag, int filesize, char * readbuffer, int * appendindexlocation, char * dateset, int i)
 {
-	int yearchars = strlen(dateset + 7) - 1;//-1 removes the star at the end 
+	int yearchars = (int)strlen(dateset + 7) - 1;//-1 removes the star at the end 
 	if (mflag == 0)
 	{
 		//no date alike is present, input to the closest year range
@@ -1327,7 +1390,7 @@ char* monthrange(int filesize, char * readbuffer, char * dateset, int * appendin
 }
 
 //creates the LocalData.txt used as refference for calendar emulation within the program.
-BOOL CalendarCreate(BOOL RealorCustom, int startyear, int newyearrange)
+BOOL CalendarCreate(BOOL RealorCustom, int localstartyear, int newyearrange)
 {
 	int thirtyone[] = { 1,3,5,7,8,10,12 };
 	int thirty[] = { 4,6,9,11 };
@@ -1358,7 +1421,7 @@ BOOL CalendarCreate(BOOL RealorCustom, int startyear, int newyearrange)
 	else//create a localdata.txt based on new year range, call this when changing localdate from button!
 	{
 		yearrange = newyearrange;
-		yearzero = dateyear = startyear;
+		yearzero = dateyear = localstartyear;
 		SetFilePointer(datafile, 0, NULL, FILE_BEGIN);//empty the file
 		SetEndOfFile(datafile);
 	}
@@ -1476,16 +1539,19 @@ static long long monthf = 1, monthl = 1, yearf = 2024, yearl = 2025, dayf = 1, d
 INT_PTR CALLBACK DlgScriptedInput(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	int result = 0, appendlocationindex = 0, amountread = 0;
+	char tempvar2 = 0;
 	char * ScriptString = { 0 };
 	BOOL datepresent = FALSE;
 	int originaldateselected = selecteddate;
 	OVERLAPPED overlapstruct = { 0 };
 	int monthsinaday[13] = {0, 31,28,31,30,31,30,31,31, 30,31,30,31 };
+	if (lParam == 0)
+		tempvar2 = 1;
 	switch (message)
 	{
 	case WM_INITDIALOG:
 		SendDlgItemMessageA(hwndDlg, TXTSCRIPTINPUT, EM_SETLIMITTEXT, pchinputbuffermemory/2, 0);//limits the editbox input to 1/2 of textbox input buffer
-		CreateDialogA(GetModuleHandle(NULL), MAKEINTRESOURCE(IDSCRIPTMACRO), hwndDlg, DlgScriptMacros);
+		CreateDialogW(GetModuleHandle(NULL), MAKEINTRESOURCE(IDSCRIPTMACRO), hwndDlg, DlgScriptMacros);
 		DestroyWindow(pickamaterina);
 		break;
 	case WM_COMMAND:
@@ -1497,10 +1563,10 @@ INT_PTR CALLBACK DlgScriptedInput(HWND hwndDlg, UINT message, WPARAM wParam, LPA
 		case IDOK:
 			
 			ScriptString = calloc(pchinputbuffermemory / 2, sizeof(char));
-			GetDlgItemTextA(hwndDlg, TXTSCRIPTINPUT, ScriptString, pchinputbuffermemory / 2);
+			GetDlgItemTextA(hwndDlg, TXTSCRIPTINPUT, ScriptString, (int)pchinputbuffermemory / 2);
 
 			//below code pastes the ScriptString to all days within range of selection.
-			for(int i = yearf; i<=yearl; i++)
+			for(int i = (int)yearf; i<=yearl; i++)
 			{
 				//leap year mechanism
 				monthsinaday[2] = 28;
@@ -1515,20 +1581,20 @@ INT_PTR CALLBACK DlgScriptedInput(HWND hwndDlg, UINT message, WPARAM wParam, LPA
 				//end of leapyear mechanism
 				int l = 1;
 				if (i == yearf)
-					l = monthf;
+					l = (int)monthf;
 				else if (i == yearl)
-					l = monthl;
+					l = (int)monthl;
 				selecteddate = selecteddate & 0x7ff;//zerout the year
 				selecteddate += i << 11;//put the year inside selecteddate;
 				for(; l <= monthl && l <= 12; l++)
 				{
 					int k = 1;
 					if (i == yearf && l == monthf)
-						k == dayf;//begging with the starting date at the starting month
+						k = (int)dayf;//beginning with the starting date at the starting month
 					else if (i == yearl && l == monthl)
-						monthsinaday[l] = dayl;
+						monthsinaday[l] = (int)dayl;
 					if(yearl == yearf && monthl == monthf)
-						monthsinaday[l] = dayl;//if the months and years are the same, then the max days is basically dayl
+						monthsinaday[l] = (int)dayl;//if the months and years are the same, then the max days is basically dayl
 					selecteddate = selecteddate & 0xfff87f;//zeroout the month
 					selecteddate += l << 7;//implant the month
 					for(; k <= monthsinaday[l] ; k++)
@@ -1536,7 +1602,7 @@ INT_PTR CALLBACK DlgScriptedInput(HWND hwndDlg, UINT message, WPARAM wParam, LPA
 						selecteddate = selecteddate & 0xFFFF80;//zeroout the day
 						selecteddate += k;//the day is the lowest bit henceforth we can add it like this
 						//scriptformatfunction
-						ScriptFormat(ScriptString, hwndDlg);
+						ScriptFormat(ScriptString);
 						DateTestBufferLoad(&amountread, &overlapstruct, &appendlocationindex, &datepresent);
 						char* readbuffer = calloc((size_t)(amountread)+strlen(ScriptString)+10, sizeof(char));
 						//concatenate the datetext and scriptstring
@@ -1546,7 +1612,11 @@ INT_PTR CALLBACK DlgScriptedInput(HWND hwndDlg, UINT message, WPARAM wParam, LPA
 							puskurac.Offset = appendlocationindex+overlapstruct.Offset;//the beggining of datemark + datemarklength is the beggining of text
 							HANDLE hFile = { 0 };
 							hFile = CreateFileA(datasource, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-							ReadFile(hFile, readbuffer, amountread, NULL, &puskurac);//load the datetext
+							
+							if (FALSE == ReadFile(hFile, readbuffer, amountread, NULL, &puskurac))//load the datetext
+							{
+								CrashDumpFunction(11602, 0);
+							}
 							CloseHandle(hFile);
 						}
 						_memccpy(readbuffer + amountread, ScriptString, 0, pchinputbuffermemory / 2);
@@ -1573,7 +1643,7 @@ INT_PTR CALLBACK DlgScriptedInput(HWND hwndDlg, UINT message, WPARAM wParam, LPA
 			DialogBox(GetModuleHandle(NULL), MAKEINTRESOURCE(IDSCRIPTMACRO), hwndDlg, DlgScriptMacros);
 			return TRUE;
 		case IDDATESSI:
-			result = DialogBox(GetModuleHandle(NULL), MAKEINTRESOURCE(IDSCRIPTDATES), hwndDlg, DlgScriptDates);
+			result = (int)DialogBox(GetModuleHandle(NULL), MAKEINTRESOURCE(IDSCRIPTDATES), hwndDlg, DlgScriptDates);
 			return TRUE;
 		case IDHELPSI:
 			return TRUE;
@@ -1591,18 +1661,19 @@ INT_PTR CALLBACK DlgScriptedInput(HWND hwndDlg, UINT message, WPARAM wParam, LPA
 INT_PTR CALLBACK DlgScriptMacros(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	static HWND ParenthwndDlg = { 0 }, listbox = { 0 }, textstring2 = { 0 };
-	char macrosymbol = 0;
+	char tempvar1 = 0;
+	if (lParam == 0)
+		tempvar1 = 1;
 	HANDLE hFile = { 0 };
-	char* tempstring = { 0 }, * readbuffer = { 0 }, * dataitem = { 0 };
-	BOOL gayflag = FALSE;
+	char* tempstring = { 0 }, * readbuffer = { 0 };
 	int fileszie = 0, readnumber=0;
 	int static selection = 0;
 	switch (message)
 	{
 	case WM_INITDIALOG:
 		textstring2 = GetDlgItem(hwndDlg, TXTSCRIPTINPUT2);
-		SetWindowSubclass(textstring2, MarkBoxInputSrc, 0, 0);
-		SetWindowSubclass(GetDlgItem(hwndDlg, IDC_LIST1), ListBoxSrc, 0, 0);
+		SetWindowSubclass(textstring2, (SUBCLASSPROC)MarkBoxInputSrc, 0, 0);
+		SetWindowSubclass(GetDlgItem(hwndDlg, IDC_LIST1), (SUBCLASSPROC)ListBoxSrc, 0, 0);
 		for (int i = 0; i < 256; i++)
 			macrolist[i] = calloc(101, sizeof(char));
 		pickamaterina = ParenthwndDlg = hwndDlg;
@@ -1610,23 +1681,36 @@ INT_PTR CALLBACK DlgScriptMacros(HWND hwndDlg, UINT message, WPARAM wParam, LPAR
 		SendDlgItemMessageA(hwndDlg, TXTSCRIPTINPUT3, EM_SETLIMITTEXT, 1, 0);//limits the editbox input to 1 bytes.
 		SendDlgItemMessageA(hwndDlg, IDC_LIST1, LB_SETCOLUMNWIDTH, 40, 0);//limits the editbox input to 1 bytes.
 		tempstring = calloc(1000, sizeof(char));
+		if (tempstring == 0)
+		{
+			CrashDumpFunction(116868, 1);
+			return FALSE;
+		}
 		sprintf_s(tempstring, 1000, "%sScriptMacros.txt", theworkingdirectory);
 		hFile = CreateFileA(tempstring, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 		free(tempstring);
 		fileszie = GetFileSize(hFile, NULL);
 		readbuffer = calloc(fileszie, sizeof(char));
+		if (readbuffer == NULL)
+		{
+			CrashDumpFunction(11674, 1);
+			return FALSE;
+		}
 		readnumber = 0;
 		int listindex = 0;
-		ReadFile(hFile, readbuffer, fileszie, &readnumber, NULL);
+		if (FALSE == ReadFile(hFile, readbuffer, fileszie, &(DWORD)readnumber, NULL))
+		{
+			CrashDumpFunction(11676, 0);
+		}
 		for (int i = 1, l = 3; i < 256 && fileszie>4 && l < fileszie; i++)//max 255 items on the list
 		{
 			//grab listindex
 			listindex = (int)readbuffer[l - 2];//converts char into number used for listindex
 			//then grab the text
-			for (int m = l; readbuffer[l] != specialchar[0] && l < fileszie; l++)
+			for (int m = l; macrolist[listindex] != NULL && readbuffer[l] != specialchar[0] && l < fileszie; l++)
 			{
 				macrolist[listindex][l - m] = readbuffer[l];
-				if (readbuffer + 1 == fileszie)
+				if (l + 1 == fileszie)
 				{
 					fileszie = 4;//break the loop
 				}
@@ -1634,18 +1718,17 @@ INT_PTR CALLBACK DlgScriptMacros(HWND hwndDlg, UINT message, WPARAM wParam, LPAR
 			l += 4;
 		}
 		listbox = GetDlgItem(ParenthwndDlg, IDC_LIST1);
-		for (int i = 0, b = 0; i < 256; i++)
+		for (int i = 0, b = 0; macrolist[i] != NULL && i < 256; i++)
 		{//check if index is valid
 			if (macrolist[i][0] != '\0')
 			{//if its valid send the appropriate message to signal it to set the data associated with it
 				char signalstring[3] = { 0 };
 				signalstring[0] = '%';
-				signalstring[1] = i;
+				signalstring[1] = (char)i;
 				//int d = SendMessageA(listbox, LB_SETITEMDATA, b, macrolist[i]);
 				//now set its text that will be shown in the list
-				SendMessageA(listbox, LB_ADDSTRING, b, signalstring);
+				SendMessageA(listbox, LB_ADDSTRING, b, (LPARAM)signalstring);
 				b++;
-				char* fagshit = calloc(1000, sizeof(char));
 				//SendDlgItemMessageA(ParenthwndDlg, IDC_LIST1, fagshit, 1000);
 			}
 		}//with this you inititalize the scriptstringsmacros file of ours
@@ -1668,7 +1751,7 @@ INT_PTR CALLBACK DlgScriptMacros(HWND hwndDlg, UINT message, WPARAM wParam, LPAR
 		case IDMACROSET://click on button "macroset", sets a macro symbol and adds it to macrolist or modifies the preexisting macro
 			//now append this data to our macrostrings file
 			selection = 0;
-			char * bullshitcancer = calloc(20, sizeof(char));
+			LPWSTR bullshitcancer = calloc(20, sizeof(char));
 			Edit_GetText(GetDlgItem(ParenthwndDlg, TXTSCRIPTINPUT3), bullshitcancer, 2);
 			selection = bullshitcancer[0];
 			if (selection == 0)
@@ -1682,25 +1765,28 @@ INT_PTR CALLBACK DlgScriptMacros(HWND hwndDlg, UINT message, WPARAM wParam, LPAR
 			hFile = CreateFileA(tempstring, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 			fileszie = GetFileSize(hFile, NULL);
 			macrosymboldata[0] = '%';
-			macrosymboldata[1] = selection;
+			macrosymboldata[1] = (char)selection;
 			macrosymboldata[2] = specialchar[0];
-			char * readbuffer = calloc(fileszie+10, sizeof(char));
+			char * readbuffer1 = calloc(fileszie+10, sizeof(char));
 			OVERLAPPED overlapstruct = { 0 };
-			ReadFile(hFile, readbuffer, fileszie, NULL, &overlapstruct);
+			if (FALSE == ReadFile(hFile, readbuffer1, fileszie, NULL, &overlapstruct))
+			{
+				CrashDumpFunction(11753, 0);
+			}
 			unsigned char intextflag = FALSE;
 			BOOL seekfront = FALSE;
 			BOOL symbolexists = FALSE;
 			int firstoffset = 0 , frontoffset = 0;
 			for(int i = 0; i < fileszie; i++)
 			{
-				if (readbuffer[i] == specialchar[0])
+				if (readbuffer1[i] == specialchar[0])
 				{
 					if (seekfront == TRUE && intextflag == FALSE)
 					{
 						frontoffset = i-2;//position of macro in front of the selected macro
 						i = fileszie;//terminate the loop
 					}
-					if (intextflag == FALSE && i - 1 > 0 && readbuffer[i-1] == selection)
+					if (intextflag == FALSE && i - 1 > 0 && readbuffer1[i-1] == selection)
 					{
 						firstoffset = i-2;//position of the beggining of macro ie its % symbol
 						seekfront = TRUE;//datapos
@@ -1722,7 +1808,7 @@ INT_PTR CALLBACK DlgScriptMacros(HWND hwndDlg, UINT message, WPARAM wParam, LPAR
 			_memccpy(memoryvariable, macrosymboldata, 0, 3);
 			_memccpy(memoryvariable + 3, newstring, 0, length);
 			memoryvariable[3 + length - 1] = specialchar[0];//close the dataset with the star
-			_memccpy(memoryvariable + 3 + length, readbuffer + frontoffset+2, 0, fileszie - frontoffset);
+			_memccpy(memoryvariable + 3 + length, readbuffer1 + frontoffset+2, 0, fileszie - frontoffset);
 			int datachange = (frontoffset - firstoffset) - (length+1);
 			int amounttowrite = fileszie - firstoffset - datachange;
 			WriteFile(hFile, memoryvariable, amounttowrite, NULL, &overlapstruct);
@@ -1734,10 +1820,10 @@ INT_PTR CALLBACK DlgScriptMacros(HWND hwndDlg, UINT message, WPARAM wParam, LPAR
 			//update the macrolist
 			if (macrolist[selection][0] == 0)//macro not present, add it
 			{
-				char* charsstring = calloc(5, sizeof(char));
+				WCHAR* charsstring = calloc(5, sizeof(char));
 				charsstring[0] = '%';
-				charsstring[1] = selection;
-				SendMessageA(listbox, LB_ADDSTRING, 0, charsstring);
+				charsstring[1] = (char)selection;
+				SendMessageA(listbox, LB_ADDSTRING, 0, (LPARAM)charsstring);
 				free(charsstring);
 			}
 			memset(macrolist[selection], 0, 101);//empty the macro
@@ -1753,7 +1839,7 @@ INT_PTR CALLBACK DlgScriptMacros(HWND hwndDlg, UINT message, WPARAM wParam, LPAR
 		case TXTSCRIPTINPUT3://ONE-LETTER MACROBOX
 			if (HIWORD(wParam) == EN_UPDATE)
 			{
-				char* Remaints = calloc(100, sizeof(char));
+				LPWSTR Remaints = calloc(100, sizeof(char));
 				Edit_GetText(GetDlgItem(ParenthwndDlg, TXTSCRIPTINPUT3), Remaints, 2);
 				selection = (int)Remaints[0];
 				free(Remaints);
@@ -1767,16 +1853,16 @@ INT_PTR CALLBACK DlgScriptMacros(HWND hwndDlg, UINT message, WPARAM wParam, LPAR
 			{
 			case LBN_DBLCLK:
 				return TRUE;
-			case LBN_ERRSPACE:
-				return TRUE;
+			//case LBN_ERRSPACE:
+				//return TRUE;
 			case LBN_KILLFOCUS:
 				return TRUE;
 			case LBN_SELCANCEL:
 				return TRUE;
 			case LBN_SELCHANGE:
-				selection = SendDlgItemMessageA(ParenthwndDlg, IDC_LIST1, LB_GETCARETINDEX, 0, 0);
+				selection = (int)SendDlgItemMessageA(ParenthwndDlg, IDC_LIST1, LB_GETCARETINDEX, 0, 0);
 				char* indexname = calloc(4, sizeof(char));
-				SendDlgItemMessageA(ParenthwndDlg, IDC_LIST1, LB_GETTEXT, selection, indexname);
+				SendDlgItemMessageA(ParenthwndDlg, IDC_LIST1, LB_GETTEXT, selection, (LPARAM)indexname);
 				selection = (int)indexname[1];
 				SetWindowTextA(textstring2, macrolist[selection]);
 				SetWindowTextA(GetDlgItem(hwndDlg, TXTSCRIPTINPUT3), indexname+1);
@@ -1795,17 +1881,20 @@ INT_PTR CALLBACK DlgScriptMacros(HWND hwndDlg, UINT message, WPARAM wParam, LPAR
 INT_PTR CALLBACK DlgScriptDates(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	BOOL failcheck = TRUE;
+	int tempvar = 0;
+	if (lParam == 0)
+		tempvar = 1;
 	static HWND hwndDlgMain = { 0 };
 	switch (message)
 	{
 	case WM_INITDIALOG:
 		hwndDlgMain = hwndDlg;
-		SetDlgItemInt(hwndDlgMain, IDMONTHF, monthf, FALSE);
-		SetDlgItemInt(hwndDlgMain, IDMONTHL, monthl, FALSE);
-		SetDlgItemInt(hwndDlgMain, IDYEARF, yearf, FALSE);
-		SetDlgItemInt(hwndDlgMain, IDYEARL, yearl, FALSE);
-		SetDlgItemInt(hwndDlgMain, IDDAYF, dayf, FALSE);
-		SetDlgItemInt(hwndDlgMain, IDDAYL, dayl, FALSE);
+		SetDlgItemInt(hwndDlgMain, IDMONTHF, (unsigned int)monthf, FALSE);
+		SetDlgItemInt(hwndDlgMain, IDMONTHL, (unsigned int)monthl, FALSE);
+		SetDlgItemInt(hwndDlgMain, IDYEARF, (unsigned int)yearf, FALSE);
+		SetDlgItemInt(hwndDlgMain, IDYEARL, (unsigned int)yearl, FALSE);
+		SetDlgItemInt(hwndDlgMain, IDDAYF, (unsigned int)dayf, FALSE);
+		SetDlgItemInt(hwndDlgMain, IDDAYL, (unsigned int)dayl, FALSE);
 		break;
 	case WM_COMMAND:
 		switch (LOWORD(wParam))
@@ -1842,14 +1931,14 @@ INT_PTR CALLBACK DlgScriptDates(HWND hwndDlg, UINT message, WPARAM wParam, LPARA
 	default:
 		return FALSE;
 	}
+	return FALSE;
 }
 //Extracts the macros
-char* ScriptFormat(char* Inputbuffer, HWND parenthwnd)
+char* ScriptFormat(char* Inputbuffer)
 {
-	char* returnstring = { 0 };
 	int stringlength = 0;
 	BOOL firstrun = TRUE;
-	stringlength = strlen(Inputbuffer);
+	stringlength = (int)strlen(Inputbuffer);
 	for (int i = 0; i < stringlength; i++)
 	{
 		if (Inputbuffer[i] == '%')
@@ -1862,11 +1951,11 @@ char* ScriptFormat(char* Inputbuffer, HWND parenthwnd)
 				if (macro < 255 && macro>-1 && macrolist[macro] != NULL)
 				{
 					_memccpy(Inputbuffer + i, Inputbuffer + i +2, 0, stringlength - 2);//removes '% and following character"
-					int mstringlength = strlen(macrolist[macro]);
+					int mstringlength = (int)strlen(macrolist[macro]);
 					char* macroformatted = calloc(mstringlength+4, sizeof(char));
 					_memccpy(macroformatted, macrolist[macro], 0, mstringlength);
-					macroformatted = MacroFormating(macroformatted, parenthwnd, firstrun);
-					mstringlength = strlen(macroformatted);
+					macroformatted = MacroFormating(macroformatted, firstrun);
+					mstringlength = (int)strlen(macroformatted);
 					if (i + mstringlength >= 1000)//larger then scriptstirngbuffer
 					{
 						CrashDumpFunction(8989, 0);
@@ -1887,12 +1976,13 @@ char* ScriptFormat(char* Inputbuffer, HWND parenthwnd)
 }
 
 //expands the macro to its form
-char* MacroFormating(char* macroformated, HWND parenthwnd, BOOL firstrun)
+char* MacroFormating(char* macroformated, BOOL firstrun)
 {
 	int length = 0, templength = 0, oldselecteddate = 0, daysempty = 0;
-	int* number = calloc(100, sizeof(int));
 	int lastbyte = 0;
-	length = strlen(macroformated);
+	if (macroformated == NULL)
+		return FALSE;
+	length = (int)strlen(macroformated);
 	char scripts[50][100] = { 
 		"Date",
 		"Month",
@@ -1938,7 +2028,7 @@ char* MacroFormating(char* macroformated, HWND parenthwnd, BOOL firstrun)
 	int dummyint = 0;
 	BOOL myswitch = FALSE;
 	double dummyintfloat = 0, ifstatement1 = 0, ifstatement2 = 0;
-	int static startyear = 0, startmonth = 0, startday = 0, oldmonth = 0, symbolindex = 0;
+	int static mstartyear = 0, mstartmonth = 0, mstartday = 0, oldmonth = 0, symbolindex = 0;
 	int static timesinvoked = 0;
 	static char signed stateflag[100] = { 0 };//used for arithemtic flags and if statements, capable of nesting them.
 	/*Formating is thus like this, symbolsymbolsymbol, since there is 19 symbols each number represent a symbol*/
@@ -1960,23 +2050,25 @@ char* MacroFormating(char* macroformated, HWND parenthwnd, BOOL firstrun)
 	* -5 - NotEquivalent
 	*/
 	HANDLE hFile = { 0 };
-	HWND dummy = { 0 };
 	OVERLAPPED overlapstruct = { 0 };
 	BOOL datepresent = { 0 }, ifflag = FALSE, foundstring = FALSE;
 	char* tempvariable = { 0 };
 	hFile = CreateFileA(datasource, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	if(firstrun == TRUE)
 	{
-		startyear = selecteddate >> 11;//these 3 never change afterwards
-		startmonth = (selecteddate & 0x780) >> 7;
-		startday = (selecteddate & 0x7F);
+		mstartyear = selecteddate >> 11;//these 3 never change afterwards
+		mstartmonth = (selecteddate & 0x780) >> 7;
+		mstartday = (selecteddate & 0x7F);
 	}
 	firstrun = FALSE;
-	for (int i = 0; i < length; i++)
+	for (int i = 0; i < length && macroformated != NULL && macroformated+i != NULL; i++)
 	{
 		foundstring = FALSE;
+#pragma warning(push)
+#pragma warning(disable:6385)
 		if (macroformated[i] == '!')
 		{
+#pragma warning(pop)
 			for(int n = 0; n < 38 && foundstring == FALSE; n++)
 				if (0 == comparestrings(macroformated+(i+1), scripts[n]))
 				{
@@ -1987,12 +2079,23 @@ char* MacroFormating(char* macroformated, HWND parenthwnd, BOOL firstrun)
 					case 0://!Date ie. day
 						scriptslength = 69;
 						tempvariable = calloc(10, sizeof(char));
+						if (tempvariable == NULL)
+						{
+							CrashDumpFunction(12081, 1);
+							return FALSE;
+						}
 						sprintf_s(tempvariable, 10,"%i", day);
 						templength = strlen(tempvariable);
 						difference = templength - macrolength;
 						if (difference > 0)//add additional memory and push forward
 						{
-							macroformated = realloc(macroformated, sizeof(char) * difference + 1);
+							char* temppointer6 = 0;
+							temppointer6 = realloc(macroformated, sizeof(char) * difference + 1);
+							if (temppointer6 == NULL)
+							{
+								CrashDumpFunction(12093, 1);
+								return FALSE;
+							}
 							_memccpy(macroformated + (i + templength), macroformated + i, 0, templength);
 						}
 						_memccpy(macroformated + i, tempvariable, 0, templength);
@@ -2512,7 +2615,7 @@ char* MacroFormating(char* macroformated, HWND parenthwnd, BOOL firstrun)
 					case 19://!PassedChars, Amount of chars typed in the runtime of the script
 						dummyint = 0;
 						tempvariable = calloc(30, sizeof(char));
-						sprintf_s(tempvariable, 30,"%i", charspassed);
+						sprintf_s(tempvariable, 30,"%ll", charspassed);
 						templength = strlen(tempvariable);
 						difference = templength - macrolength;
 						if (difference > 0)//add additional memory and push forward
@@ -2531,7 +2634,7 @@ char* MacroFormating(char* macroformated, HWND parenthwnd, BOOL firstrun)
 					case 20://!PassedLines, Amount of lines typed in the runtime of the script
 						dummyint = 0;
 						tempvariable = calloc(30, sizeof(char));
-						sprintf_s(tempvariable, 30,"%i", newlinespassed);
+						sprintf_s(tempvariable, 30,"%ll", newlinespassed);
 						templength = strlen(tempvariable);
 						difference = templength - macrolength;
 						if (difference > 0)//add additional memory and push forward
@@ -2550,7 +2653,7 @@ char* MacroFormating(char* macroformated, HWND parenthwnd, BOOL firstrun)
 					case 21://!TotalPassedTextData, Total amount of data inputted within the runtime of the script, same as passed chars, to be updated when we make compatibility with widechars
 						dummyint = 0;
 						tempvariable = calloc(30, sizeof(char));
-						sprintf_s(tempvariable, 30,"%i", charspassed);
+						sprintf_s(tempvariable, 30,"%ll", charspassed);
 						templength = strlen(tempvariable);
 						difference = templength - macrolength;
 						if (difference > 0)//add additional memory and push forward
@@ -3528,8 +3631,8 @@ char* DataSaveReordering(char* readbuffer)
 		memset(tempdate, 0, 20);
 		_memccpy(tempdate, mydataset[i]->date + 1, ':', 20);
 		int loadingday = StrToIntA(tempdate);
-		int monthset;
-		int yearset;
+		int monthset = 0;
+		int yearset = 0;
 		for (int m = datesamount - 1; m >= 0; m--)
 		{
 			if (datesarray[m].year == loadingyear)

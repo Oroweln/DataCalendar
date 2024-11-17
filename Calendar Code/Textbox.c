@@ -127,7 +127,6 @@ All you need is to set the required color in control's device context and pass a
 			default:
 				return TRUE;
 			}
-			return TRUE;
 		default:
 			return FALSE;
 		}

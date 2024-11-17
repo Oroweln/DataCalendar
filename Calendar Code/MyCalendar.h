@@ -76,7 +76,9 @@ BOOL DestroyButton(HWND hwnd);
 void cleaner4100(LPWSTR something, HINSTANCE something2);
 BOOL ShowMessage(HWND hwnd, int XClient, int YClient, UINT message);
 
-//cause of autism we put this shit here
+//cause of 
+// 
+//  we put this shit here
 
 extern RECT buttonrect;
 extern RECT buttonrectd;

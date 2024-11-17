@@ -380,7 +380,7 @@ LRESULT CALLBACK ButtonProcMk(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPa
 		hBrush = CreateSolidBrush(RGB(200, 120, 80));
 		FillRect(hdc, &DataUpdateRect, hBrush);
 		DeleteObject(hBrush);
-		sprintf_s(memdata, 1000, "remaining: \n%u", TextHeapRemaining);
+		sprintf_s(memdata, 1000, "remaining: \n%i", TextHeapRemaining);
 		DrawTextA(hdc, memdata, -1, &DataUpdateRect, DT_LEFT);
 		//Data remaining
 		memset(memdata, 0, sizeof(char) * 1000);
