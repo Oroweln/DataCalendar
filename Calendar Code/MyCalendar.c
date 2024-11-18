@@ -2026,6 +2026,7 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 	int monthsinaday[13] = { 0, 31,28,31,30,31,30,31,31, 30,31,30,31 };
 	int scriptslength = 0, numberindex = 0, day = (selecteddate & 0x7F), month = (selecteddate & 0x780) >> 7, year = selecteddate >> 11, amountread = 0, appendindexlocation = 0, ifnumber = 1, ifsign = 0, macrolength = 0, difference = 0;
 	int dummyint = 0;
+	char* temppointer6 = 0;
 	BOOL myswitch = FALSE;
 	double dummyintfloat = 0, ifstatement1 = 0, ifstatement2 = 0;
 	int static mstartyear = 0, mstartmonth = 0, mstartday = 0, oldmonth = 0, symbolindex = 0;
@@ -2073,7 +2074,7 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 				if (0 == comparestrings(macroformated+(i+1), scripts[n]))
 				{
 					foundstring = TRUE;
-					macrolength = strlen(scripts[n]+1);//length of the macro including ! sign 
+					macrolength = (int)strlen(scripts[n]+1);//length of the macro including ! sign 
 					switch (n)
 					{
 					case 0://!Date ie. day
@@ -2085,17 +2086,18 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 							return FALSE;
 						}
 						sprintf_s(tempvariable, 10,"%i", day);
-						templength = strlen(tempvariable);
+						templength = (int)strlen(tempvariable);
 						difference = templength - macrolength;
 						if (difference > 0)//add additional memory and push forward
 						{
-							char* temppointer6 = 0;
 							temppointer6 = realloc(macroformated, sizeof(char) * difference + 1);
 							if (temppointer6 == NULL)
 							{
 								CrashDumpFunction(12093, 1);
 								return FALSE;
 							}
+							macroformated = temppointer6;
+							temppointer6 = NULL;
 							_memccpy(macroformated + (i + templength), macroformated + i, 0, templength);
 						}
 						_memccpy(macroformated + i, tempvariable, 0, templength);
@@ -2110,11 +2112,18 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 						scriptslength = 69;
 						tempvariable = calloc(10, sizeof(char));
 						sprintf_s(tempvariable, 10,"%i", month);
-						templength = strlen(tempvariable);
+						templength = (int)strlen(tempvariable);
 						difference = templength - macrolength;
 						if (difference > 0)//add additional memory and push forward
 						{
-							macroformated = realloc(macroformated, sizeof(char) * difference + 1);
+							temppointer6 = realloc(macroformated, sizeof(char) * difference + 1);
+							if (temppointer6 == NULL)
+							{
+								CrashDumpFunction(12093, 1);
+								return FALSE;
+							}
+							macroformated = temppointer6;
+							temppointer6 = NULL;
 							_memccpy(macroformated + (i + templength), macroformated + i, 0, templength);
 						}
 						_memccpy(macroformated + i, tempvariable, 0, templength);
@@ -2129,11 +2138,18 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 						scriptslength = 69;
 						tempvariable = calloc(10, sizeof(char));
 						sprintf_s(tempvariable, 10,"%i", year);
-						templength = strlen(tempvariable);
+						templength = (int)strlen(tempvariable);
 						difference = templength - macrolength;
 						if (difference > 0)//add additional memory and push forward
 						{
-							macroformated = realloc(macroformated, sizeof(char) * difference + 1);
+							temppointer6 = realloc(macroformated, sizeof(char) * difference + 1);
+							if (temppointer6 == NULL)
+							{
+								CrashDumpFunction(12093, 1);
+								return FALSE;
+							}
+							macroformated = temppointer6;
+							temppointer6 = NULL;
 							_memccpy(macroformated + (i + templength), macroformated + i, 0, templength);
 						}
 						_memccpy(macroformated + i, tempvariable, 0, templength);
@@ -2148,11 +2164,18 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 						dummyint = GetFileSize(hFile, NULL);
 						tempvariable = calloc(20, sizeof(char));
 						sprintf_s(tempvariable, 10,"%i", dummyint);
-						templength = strlen(tempvariable);
+						templength = (int)strlen(tempvariable);
 						difference = templength - macrolength;
 						if (difference > 0)//add additional memory and push forward
 						{
-							macroformated = realloc(macroformated, sizeof(char) * difference + 1);
+							temppointer6 = realloc(macroformated, sizeof(char) * difference + 1);
+							if (temppointer6 == NULL)
+							{
+								CrashDumpFunction(12093, 1);
+								return FALSE;
+							}
+							macroformated = temppointer6;
+							temppointer6 = NULL;
 							_memccpy(macroformated + (i + templength), macroformated + i, 0, templength);
 						}
 						_memccpy(macroformated + i, tempvariable, 0, templength);
@@ -2166,19 +2189,30 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 					case 4://!TotalLines, Sum of lines of the data within the data source
 						dummyint = GetFileSize(hFile, NULL);
 						tempvariable = calloc(dummyint, sizeof(char));
-						ReadFile(hFile, tempvariable, dummyint, &dummyint, NULL);
-						for (int i = 0; i < dummyint; i++)
+						if (FALSE == ReadFile(hFile, tempvariable, dummyint, &(DWORD)dummyint, NULL))
+						{
+							CrashDumpFunction(12194, 0);
+							return FALSE;
+						}
+						for (i = 0; i < dummyint; i++)
 						{
 							if (tempvariable[i] == '\n')
 								numberindex++;
 						}
 						memset(tempvariable, 0, 50);
 						sprintf_s(tempvariable, 50,"%i", numberindex);
-						templength = strlen(tempvariable);
+						templength = (int)strlen(tempvariable);
 						difference = templength - macrolength;
 						if (difference > 0)//add additional memory and push forward
 						{
-							macroformated = realloc(macroformated, sizeof(char) * difference + 1);
+							temppointer6 = realloc(macroformated, sizeof(char) * difference + 1);
+							if (temppointer6 == NULL)
+							{
+								CrashDumpFunction(12093, 1);
+								return FALSE;
+							}
+							macroformated = temppointer6;
+							temppointer6 = NULL;
 							_memccpy(macroformated + (i + templength), macroformated + i, 0, templength);
 						}
 						_memccpy(macroformated + i, tempvariable, 0, templength);
@@ -2193,11 +2227,18 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 						dummyint = GetFileSize(hFile, NULL);
 						tempvariable = calloc(100, sizeof(char));
 						sprintf_s(tempvariable, 100,"%i", dummyint);
-						templength = strlen(tempvariable);
+						templength = (int)strlen(tempvariable);
 						difference = templength - macrolength;
 						if (difference > 0)//add additional memory and push forward
 						{
-							macroformated = realloc(macroformated, sizeof(char) * difference + 1);
+							temppointer6 = realloc(macroformated, sizeof(char) * difference + 1);
+							if (temppointer6 == NULL)
+							{
+								CrashDumpFunction(12093, 1);
+								return FALSE;
+							}
+							macroformated = temppointer6;
+							temppointer6 = NULL;
 							_memccpy(macroformated + (i + templength), macroformated + i, 0, templength);
 						}
 						_memccpy(macroformated + i, tempvariable, 0, templength);
@@ -2212,11 +2253,18 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 						dummyint = GetFileSize(hFile, NULL);
 						tempvariable = calloc(100, sizeof(char));
 						sprintf_s(tempvariable, 100,"%i", dummyint);
-						templength = strlen(tempvariable);
+						templength = (int)strlen(tempvariable);
 						difference = templength - macrolength;
 						if (difference > 0)//add additional memory and push forward
 						{
-							macroformated = realloc(macroformated, sizeof(char) * difference + 1);
+							temppointer6 = realloc(macroformated, sizeof(char) * difference + 1);
+							if (temppointer6 == NULL)
+							{
+								CrashDumpFunction(12093, 1);
+								return FALSE;
+							}
+							macroformated = temppointer6;
+							temppointer6 = NULL;
 							_memccpy(macroformated + (i + templength), macroformated + i, 0, templength);
 						}
 						_memccpy(macroformated + i, tempvariable, 0, templength);
@@ -2231,19 +2279,30 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 						DateTestBufferLoad(&amountread, &overlapstruct, &appendindexlocation, &datepresent);
 						tempvariable = calloc(amountread+10, sizeof(char));
 						overlapstruct.Offset = appendindexlocation;
-						ReadFile(hFile, tempvariable, amountread, NULL, &overlapstruct);
-						for (int i = 0; i < amountread; i++)
+						if (FALSE == ReadFile(hFile, tempvariable, amountread, NULL, &overlapstruct))
+						{
+							CrashDumpFunction(12284, 0);
+							return FALSE;
+						}
+						for (i = 0; i < amountread; i++)
 						{
 							if (tempvariable[i] == '\n')
 								dummyint++;
 						}
 						memset(tempvariable, 0, amountread);
 						sprintf_s(tempvariable, amountread+10,"%i", dummyint);
-						templength = strlen(tempvariable);
+						templength = (int)strlen(tempvariable);
 						difference = templength - macrolength;
 						if (difference > 0)//add additional memory and push forward
 						{
-							macroformated = realloc(macroformated, sizeof(char) * difference + 1);
+							temppointer6 = realloc(macroformated, sizeof(char) * difference + 1);
+							if (temppointer6 == NULL)
+							{
+								CrashDumpFunction(12093, 1);
+								return FALSE;
+							}
+							macroformated = temppointer6;
+							temppointer6 = NULL;
 							_memccpy(macroformated + (i + templength), macroformated + i, 0, templength);
 						}
 						_memccpy(macroformated + i, tempvariable, 0, templength);
@@ -2258,11 +2317,18 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 						DateTestBufferLoad(&amountread, &overlapstruct, &appendindexlocation, &datepresent);
 						tempvariable = calloc(50, sizeof(char));
 						sprintf_s(tempvariable, 50,"%i", amountread);
-						templength = strlen(tempvariable);
+						templength = (int)strlen(tempvariable);
 						difference = templength - macrolength;
 						if (difference > 0)//add additional memory and push forward
 						{
-							macroformated = realloc(macroformated, sizeof(char) * difference + 1);
+							temppointer6 = realloc(macroformated, sizeof(char) * difference + 1);
+							if (temppointer6 == NULL)
+							{
+								CrashDumpFunction(12093, 1);
+								return FALSE;
+							}
+							macroformated = temppointer6;
+							temppointer6 = NULL;
 							_memccpy(macroformated + (i + templength), macroformated + i, 0, templength);
 						}
 						_memccpy(macroformated + i, tempvariable, 0, templength);
@@ -2275,14 +2341,21 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 						break;
 					case 9://!TotalMemoryRemaining, memory remaining in bytes 
 						dummyint = GetWindowTextLengthA(TextBoxHwnd);
-						dummyint = SendMessageA(TextBoxHwnd, EM_GETLIMITTEXT, 0, 0) - dummyint;
+						dummyint = (int)SendMessageA(TextBoxHwnd, EM_GETLIMITTEXT, 0, 0) - dummyint;
 						tempvariable = calloc(50, sizeof(char));
 						sprintf_s(tempvariable, 50,"%i", dummyint);
-						templength = strlen(tempvariable);
+						templength = (int)strlen(tempvariable);
 						difference = templength - macrolength;
 						if (difference > 0)//add additional memory and push forward
 						{
-							macroformated = realloc(macroformated, sizeof(char) * difference + 1);
+							temppointer6 = realloc(macroformated, sizeof(char) * difference + 1);
+							if (temppointer6 == NULL)
+							{
+								CrashDumpFunction(12093, 1);
+								return FALSE;
+							}
+							macroformated = temppointer6;
+							temppointer6 = NULL;
 							_memccpy(macroformated + (i + templength), macroformated + i, 0, templength);
 						}
 						_memccpy(macroformated + i, tempvariable, 0, templength);
@@ -2294,14 +2367,21 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 						free(tempvariable);
 						break;
 					case 10://!PassedDates, amount of dates passed within the runtime of the script
-						dummyint = dayspassed;
+						dummyint = (int)dayspassed;
 						tempvariable = calloc(50, sizeof(char));
 						sprintf_s(tempvariable, 50,"%i", dummyint);
-						templength = strlen(tempvariable);
+						templength = (int)strlen(tempvariable);
 						difference = templength - macrolength;
 						if (difference > 0)//add additional memory and push forward
 						{
-							macroformated = realloc(macroformated, sizeof(char) * difference + 1);
+							temppointer6 = realloc(macroformated, sizeof(char) * difference + 1);
+							if (temppointer6 == NULL)
+							{
+								CrashDumpFunction(12093, 1);
+								return FALSE;
+							}
+							macroformated = temppointer6;
+							temppointer6 = NULL;
 							_memccpy(macroformated + (i + templength), macroformated + i, 0, templength);
 						}
 						_memccpy(macroformated + i, tempvariable, 0, templength);
@@ -2313,14 +2393,21 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 						free(tempvariable);
 						break;
 					case 11://!PassedMonths, amount of months passed within the runtime of the script 
-						dummyint = monthspassed;
+						dummyint = (int)monthspassed;
 						tempvariable = calloc(50, sizeof(char));
 						sprintf_s(tempvariable, 50,"%i", dummyint);
-						templength = strlen(tempvariable);
+						templength = (int)strlen(tempvariable);
 						difference = templength - macrolength;
 						if (difference > 0)//add additional memory and push forward
 						{
-							macroformated = realloc(macroformated, sizeof(char) * difference + 1);
+							temppointer6 = realloc(macroformated, sizeof(char) * difference + 1);
+							if (temppointer6 == NULL)
+							{
+								CrashDumpFunction(12093, 1);
+								return FALSE;
+							}
+							macroformated = temppointer6;
+							temppointer6 = NULL;
 							_memccpy(macroformated + (i + templength), macroformated + i, 0, templength);
 						}
 						_memccpy(macroformated + i, tempvariable, 0, templength);
@@ -2332,14 +2419,21 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 						free(tempvariable);
 						break;
 					case 12://!PassedYears, amount of years passed within the runtime of the script
-						dummyint = yearspassed;
+						dummyint = (int)yearspassed;
 						tempvariable = calloc(50, sizeof(char));
 						sprintf_s(tempvariable, 50,"%i", dummyint);
-						templength = strlen(tempvariable);
+						templength = (int)strlen(tempvariable);
 						difference = templength - macrolength;
 						if (difference > 0)//add additional memory and push forward
 						{
-							macroformated = realloc(macroformated, sizeof(char) * difference + 1);
+							temppointer6 = realloc(macroformated, sizeof(char) * difference + 1);
+							if (temppointer6 == NULL)
+							{
+								CrashDumpFunction(12093, 1);
+								return FALSE;
+							}
+							macroformated = temppointer6;
+							temppointer6 = NULL;
 							_memccpy(macroformated + (i + templength), macroformated + i, 0, templength);
 						}
 						_memccpy(macroformated + i, tempvariable, 0, templength);
@@ -2354,11 +2448,18 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 						DateTestBufferLoad(&amountread, &overlapstruct, &appendindexlocation, &datepresent);
 						tempvariable = calloc(4, sizeof(char));
 						sprintf_s(tempvariable, 4,"%i", datepresent);
-						templength = strlen(tempvariable);
+						templength = (int)strlen(tempvariable);
 						difference = templength - macrolength;
 						if (difference > 0)//add additional memory and push forward
 						{
-							macroformated = realloc(macroformated, sizeof(char) * difference + 1);
+							temppointer6 = realloc(macroformated, sizeof(char) * difference + 1);
+							if (temppointer6 == NULL)
+							{
+								CrashDumpFunction(12093, 1);
+								return FALSE;
+							}
+							macroformated = temppointer6;
+							temppointer6 = NULL;
 							_memccpy(macroformated + (i + templength), macroformated + i, 0, templength);
 						}
 						_memccpy(macroformated + i, tempvariable, 0, templength);
@@ -2384,7 +2485,7 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 								monthsinaday[2] = 29;
 						//end of leapyear mechanism
 						daysempty = 0;
-						for (int i = 1; i <= monthsinaday[month]; i++)
+						for (i = 1; i <= monthsinaday[month]; i++)
 						{
 							selecteddate = selecteddate & 0xFFFF80;//zeroout the day;//wipe the day
 							selecteddate += i + 1;//set the day bits
@@ -2394,11 +2495,18 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 						}
 						tempvariable = calloc(10, sizeof(char));
 						sprintf_s(tempvariable, 10,"%i", daysempty);
-						templength = strlen(tempvariable);
+						templength = (int)strlen(tempvariable);
 						difference = templength - macrolength;
 						if (difference > 0)//add additional memory and push forward
 						{
-							macroformated = realloc(macroformated, sizeof(char) * difference + 1);
+							temppointer6 = realloc(macroformated, sizeof(char) * difference + 1);
+							if (temppointer6 == NULL)
+							{
+								CrashDumpFunction(12093, 1);
+								return FALSE;
+							}
+							macroformated = temppointer6;
+							temppointer6 = NULL;
 							_memccpy(macroformated + (i + templength), macroformated + i, 0, templength);
 						}
 						_memccpy(macroformated + i, tempvariable, 0, templength);
@@ -2429,7 +2537,7 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 						{
 							selecteddate = selecteddate & 0xfff87f;//zeroout the month
 							selecteddate += k << 7;//implant the month
-							for (int i = 1; i <= monthsinaday[k]; i++)
+							for (i = 1; i <= monthsinaday[k]; i++)
 							{
 								selecteddate = selecteddate & 0xFFFF80;//zeroout the day;//wipe the day
 								selecteddate += i + 1;//set the day bits
@@ -2440,11 +2548,18 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 						}
 						tempvariable = calloc(10, sizeof(char));
 						sprintf_s(tempvariable, 10,"%i", daysempty);
-						templength = strlen(tempvariable);
+						templength = (int)strlen(tempvariable);
 						difference = templength - macrolength;
 						if (difference > 0)//add additional memory and push forward
 						{
-							macroformated = realloc(macroformated, sizeof(char) * difference + 1);
+							temppointer6 = realloc(macroformated, sizeof(char) * difference + 1);
+							if (temppointer6 == NULL)
+							{
+								CrashDumpFunction(12093, 1);
+								return FALSE;
+							}
+							macroformated = temppointer6;
+							temppointer6 = NULL;
 							_memccpy(macroformated + (i + templength), macroformated + i, 0, templength);
 						}
 						_memccpy(macroformated + i, tempvariable, 0, templength);
@@ -2460,7 +2575,7 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 						dummyint = 0;
 						oldselecteddate = selecteddate;
 						daysempty = 0;
-						for (int l = yearf; l <= yearl; l++)
+						for (int l = (int)yearf; l <= yearl; l++)
 						{
 							selecteddate = selecteddate & 0x7ff;//zerout the year
 							selecteddate += i << 11;//put the year inside selecteddate;
@@ -2475,11 +2590,11 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 								else
 									monthsinaday[2] = 29;
 							//end of leapyear mechanism
-							for (int k = monthf; k <= monthl; k++)
+							for (int k = (int)monthf; k <= monthl; k++)
 							{
 								selecteddate = selecteddate & 0xfff87f;//zeroout the month
 								selecteddate += k << 7;//implant the month
-								for (int i = 1; i <= monthsinaday[k]; i++)
+								for (i = 1; i <= monthsinaday[k]; i++)
 								{
 									selecteddate = selecteddate & 0xFFFF80;//zeroout the day;//wipe the day
 									selecteddate += i + 1;//set the day bits
@@ -2490,11 +2605,18 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 						}
 						tempvariable = calloc(10, sizeof(char));
 						sprintf_s(tempvariable, 10,"%i", dummyint);
-						templength = strlen(tempvariable);
+						templength = (int)strlen(tempvariable);
 						difference = templength - macrolength;
 						if (difference > 0)//add additional memory and push forward
 						{
-							macroformated = realloc(macroformated, sizeof(char) * difference + 1);
+							temppointer6 = realloc(macroformated, sizeof(char) * difference + 1);
+							if (temppointer6 == NULL)
+							{
+								CrashDumpFunction(12093, 1);
+								return FALSE;
+							}
+							macroformated = temppointer6;
+							temppointer6 = NULL;
 							_memccpy(macroformated + (i + templength), macroformated + i, 0, templength);
 						}
 						_memccpy(macroformated + i, tempvariable, 0, templength);
@@ -2510,7 +2632,7 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 						dummyint = 0;
 						oldselecteddate = selecteddate;
 						daysempty = 0;
-						for (int l = yearf; l <= yearl; l++)
+						for (int l = (int)yearf; l <= yearl; l++)
 						{
 							selecteddate = selecteddate & 0x7ff;//zerout the year
 							selecteddate += i << 11;//put the year inside selecteddate;
@@ -2525,7 +2647,7 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 								else
 									monthsinaday[2] = 29;
 							//end of leapyear mechanism
-							for (int k = monthf; k <= monthl; k++)
+							for (int k = (int)monthf; k <= monthl; k++)
 							{
 								selecteddate = selecteddate & 0xfff87f;//zeroout the month
 								selecteddate += k << 7;//implant the month
@@ -2546,11 +2668,18 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 						}
 						tempvariable = calloc(10, sizeof(char));
 						sprintf_s(tempvariable, 10,"%i", dummyint);
-						templength = strlen(tempvariable);
+						templength = (int)strlen(tempvariable);
 						difference = templength - macrolength;
 						if (difference > 0)//add additional memory and push forward
 						{
-							macroformated = realloc(macroformated, sizeof(char) * difference + 1);
+							temppointer6 = realloc(macroformated, sizeof(char) * difference + 1);
+							if (temppointer6 == NULL)
+							{
+								CrashDumpFunction(12093, 1);
+								return FALSE;
+							}
+							macroformated = temppointer6;
+							temppointer6 = NULL;
 							_memccpy(macroformated + (i + templength), macroformated + i, 0, templength);
 						}
 						_memccpy(macroformated + i, tempvariable, 0, templength);
@@ -2566,7 +2695,7 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 						dummyint = 0;
 						oldselecteddate = selecteddate;
 						daysempty = 0;
-						for (int l = yearf; l <= yearl; l++)
+						for (int l = (int)yearf; l <= yearl; l++)
 						{
 							selecteddate = selecteddate & 0x7ff;//zerout the year
 							selecteddate += i << 11;//put the year inside selecteddate;
@@ -2581,11 +2710,11 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 								else
 									monthsinaday[2] = 29;
 							//end of leapyear mechanism
-							for (int k = monthf; k <= monthl; k++)
+							for (int k = (int)monthf; k <= monthl; k++)
 							{
 								selecteddate = selecteddate & 0xfff87f;//zeroout the month
 								selecteddate += k << 7;//implant the month
-								for (int i = 1; i <= monthsinaday[k]; i++)
+								for (i = 1; i <= monthsinaday[k]; i++)
 								{
 									selecteddate = selecteddate & 0xFFFF80;//zeroout the day;//wipe the day
 									selecteddate += i + 1;//set the day bits
@@ -2596,11 +2725,18 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 						}
 						tempvariable = calloc(10, sizeof(char));
 						sprintf_s(tempvariable, 10,"%i", dummyint);
-						templength = strlen(tempvariable);
+						templength = (int)strlen(tempvariable);
 						difference = templength - macrolength;
 						if (difference > 0)//add additional memory and push forward
 						{
-							macroformated = realloc(macroformated, sizeof(char) * difference + 1);
+							temppointer6 = realloc(macroformated, sizeof(char) * difference + 1);
+							if (temppointer6 == NULL)
+							{
+								CrashDumpFunction(12093, 1);
+								return FALSE;
+							}
+							macroformated = temppointer6;
+							temppointer6 = NULL;
 							_memccpy(macroformated + (i + templength), macroformated + i, 0, templength);
 						}
 						_memccpy(macroformated + i, tempvariable, 0, templength);
@@ -2615,12 +2751,24 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 					case 19://!PassedChars, Amount of chars typed in the runtime of the script
 						dummyint = 0;
 						tempvariable = calloc(30, sizeof(char));
-						sprintf_s(tempvariable, 30,"%ll", charspassed);
+						if (tempvariable == NULL)
+						{
+							CrashDumpFunction(12756, 1);
+							return FALSE;
+						}
+						sprintf_s(tempvariable, 28,"%lli", charspassed);
 						templength = strlen(tempvariable);
 						difference = templength - macrolength;
 						if (difference > 0)//add additional memory and push forward
 						{
-							macroformated = realloc(macroformated, sizeof(char) * difference + 1);
+							temppointer6 = realloc(macroformated, sizeof(char) * difference + 1);
+							if (temppointer6 == NULL)
+							{
+								CrashDumpFunction(12093, 1);
+								return FALSE;
+							}
+							macroformated = temppointer6;
+							temppointer6 = NULL;
 							_memccpy(macroformated + (i + templength), macroformated + i, 0, templength);
 						}
 						_memccpy(macroformated + i, tempvariable, 0, templength);
@@ -2634,12 +2782,19 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 					case 20://!PassedLines, Amount of lines typed in the runtime of the script
 						dummyint = 0;
 						tempvariable = calloc(30, sizeof(char));
-						sprintf_s(tempvariable, 30,"%ll", newlinespassed);
+						sprintf_s(tempvariable, 30,"%lli", newlinespassed);
 						templength = strlen(tempvariable);
 						difference = templength - macrolength;
 						if (difference > 0)//add additional memory and push forward
 						{
-							macroformated = realloc(macroformated, sizeof(char) * difference + 1);
+							temppointer6 = realloc(macroformated, sizeof(char) * difference + 1);
+							if (temppointer6 == NULL)
+							{
+								CrashDumpFunction(12093, 1);
+								return FALSE;
+							}
+							macroformated = temppointer6;
+							temppointer6 = NULL;
 							_memccpy(macroformated + (i + templength), macroformated + i, 0, templength);
 						}
 						_memccpy(macroformated + i, tempvariable, 0, templength);
@@ -2653,12 +2808,19 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 					case 21://!TotalPassedTextData, Total amount of data inputted within the runtime of the script, same as passed chars, to be updated when we make compatibility with widechars
 						dummyint = 0;
 						tempvariable = calloc(30, sizeof(char));
-						sprintf_s(tempvariable, 30,"%ll", charspassed);
+						sprintf_s(tempvariable, 30,"%lli", charspassed);
 						templength = strlen(tempvariable);
 						difference = templength - macrolength;
 						if (difference > 0)//add additional memory and push forward
 						{
-							macroformated = realloc(macroformated, sizeof(char) * difference + 1);
+							temppointer6 = realloc(macroformated, sizeof(char) * difference + 1);
+							if (temppointer6 == NULL)
+							{
+								CrashDumpFunction(12093, 1);
+								return FALSE;
+							}
+							macroformated = temppointer6;
+							temppointer6 = NULL;
 							_memccpy(macroformated + (i + templength), macroformated + i, 0, templength);
 						}
 						_memccpy(macroformated + i, tempvariable, 0, templength);
@@ -2730,7 +2892,14 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 						difference = (lastbyte - i) - templength;
 						if (difference < 0)
 						{//input is larger, push data forward
-							macroformated = realloc(macroformated, sizeof(char) * difference + 1);
+							temppointer6 = realloc(macroformated, sizeof(char) * difference + 1);
+							if (temppointer6 == NULL)
+							{
+								CrashDumpFunction(12093, 1);
+								return FALSE;
+							}
+							macroformated = temppointer6;
+							temppointer6 = NULL;
 							memset(macroformated + length + difference, 0, -difference);//push data forwards to make space
 						}
 						_memccpy(macroformated + i, tempvariable, 0, templength);
@@ -2784,7 +2953,7 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 									break;
 								}
 								//below is skipping of endif in case if returned false
-								BOOL myswitch = FALSE;
+								myswitch = FALSE;
 								if (ifresult == 0)//skip everything till next endif
 								{
 									for (; i < length && myswitch == FALSE; i++)
@@ -2809,7 +2978,7 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 							//uses nesting system ie. !sqrt!sum!Number50!Number80!Plus!Logarithm!Number20!Number50, you nest these to do multiple operations in an order of desire, once !Number appears, the nest stops and operation happen
 						}
 						tempvariable = calloc(30, sizeof(char));
-						sprintf_s(tempvariable, 30,"%ld", dummyintfloat);
+						sprintf_s(tempvariable, 30,"%lf", dummyintfloat);
 						templength = strlen(tempvariable);
 						for (int l = symbolindex-1; l >= 0; l--)
 						{
@@ -2847,7 +3016,14 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 						difference = (lastbyte - i) - templength;
 						if (difference < 0)
 						{//input is larger, push data forward
-							macroformated = realloc(macroformated, sizeof(char) * difference + 1);
+							temppointer6 = realloc(macroformated, sizeof(char) * difference + 1);
+							if (temppointer6 == NULL)
+							{
+								CrashDumpFunction(12093, 1);
+								return FALSE;
+							}
+							macroformated = temppointer6;
+							temppointer6 = NULL;
 							memset(macroformated + length + difference, 0, -difference);//push data forwards to make space
 						}
 						_memccpy(macroformated + i, tempvariable, 0, templength);
@@ -3160,7 +3336,7 @@ int NumbersFunction(int * symbolsarray, int maxsymbols, char * macroformated, in
 							number = number * number2;
 							numbersbegginingindex += index + 7;
 						}
-						else if (isdigit(macroformated + (index)) == FALSE)
+						else if (isdigit(macroformated[index]) == FALSE)
 						{
 							number2 = -1;
 							return number;
@@ -3350,6 +3526,11 @@ INT_PTR CALLBACK DlgColorWindows(HWND hwndDlg, UINT message, WPARAM wParam, LPAR
 			HBRUSH tempbrush = { 0 };
 			if (button8color != NULL)
 				tempbrush = CreateSolidBrush(*button8color);
+			if (tempbrush == 0)
+			{
+				CrashDumpFunction(13531, 0);
+				return FALSE;
+			}
 			FillRect(drawstruck->hDC, &drawstruck->rcItem, tempbrush);
 			DeleteObject(tempbrush);
 		}
@@ -3386,13 +3567,23 @@ INT_PTR CALLBACK DlgColorWindows(HWND hwndDlg, UINT message, WPARAM wParam, LPAR
 				InvalidateRect(updatelist[tripval], NULL, TRUE);
 				UpdateWindow(updatelist[tripval]);
 				tempstring = calloc(1000, sizeof(char));
+				if (tempstring == NULL)
+				{
+					CrashDumpFunction(13572, 1);
+					return FALSE;
+				}
 				sprintf_s(tempstring, 1000, "%sCalendar.dat", theworkingdirectory);
 				hFile = CreateFileA(tempstring, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 				filesize = GetFileSize(hFile, NULL);
 				char* writebuffer = calloc(3000, sizeof(char));
+				if (writebuffer == NULL)
+				{
+					CrashDumpFunction(13581, 1);
+					return FALSE;
+				}
 				SetFilePointer(hFile, 0, NULL, FILE_BEGIN);
 				SetEndOfFile(hFile);
-				sprintf_s(tempstring, 1000, "%d\n%d\n%d\n%d\n%d\n%d\n\n%d\n%d\n\nDay:%d\nMonth:%d\nYear:%d\n\n%s\n%s\n%d", monthsbuttoncolor, datesbuttoncolor, monthsbackground, datesbackground, textbackground, inputsignalcolor, yearzero, yearzero + yearrange / 12, startday, startmonth, startyear, datasource, specialchar, ordereddatasave);
+				sprintf_s(tempstring, 1000, "%lu\n%lu\n%lu\n%lu\n%lu\n%lu\n\n%d\n%d\n\nDay:%d\nMonth:%d\nYear:%d\n\n%s\n%s\n%d", monthsbuttoncolor, datesbuttoncolor, monthsbackground, datesbackground, textbackground, inputsignalcolor, yearzero, yearzero + yearrange / 12, startday, startmonth, startyear, datasource, specialchar, ordereddatasave);
 				WriteFile(hFile, writebuffer, strlen(writebuffer), &filesize, NULL);
 				if(hFile > 0)
 					CloseHandle(hFile);
@@ -3481,12 +3672,22 @@ INT_PTR CALLBACK DlgMonthsRange(HWND hwndDlg, UINT message, WPARAM wParam, LPARA
 			int DUVAJKURAC = 0;
 			CalendarCreate(1, rangeyearf, rangeyearl);
 			tempstring = calloc(1000, sizeof(char));
+			if (tempstring == NULL)
+			{
+				CrashDumpFunction(13677, 1);
+				return FALSE;
+			}
 			sprintf_s(tempstring, 1000, "%sCalendar.dat", theworkingdirectory);
 			hFile = CreateFileA(tempstring, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 			SetFilePointer(hFile, 0, NULL, FILE_BEGIN);
 			SetEndOfFile(hFile);
 			char* writebuffer = calloc(3000, sizeof(char));
-			sprintf_s(tempstring, 1000, "%d\n%d\n%d\n%d\n%d\n%d\n\n%d\n%d\n\nDay:%d\nMonth:%d\nYear:%d\n\n%s\n%s\n%d", monthsbuttoncolor, datesbuttoncolor, monthsbackground, datesbackground, textbackground, inputsignalcolor, yearzero, yearzero + yearrange / 12, startday, startmonth, startyear, datasource, specialchar, ordereddatasave);
+			if (writebuffer == NULL)
+			{
+				CrashDumpFunction(13687, 1);
+				return FALSE;
+			}
+			sprintf_s(tempstring, 1000, "%lu\n%lu\n%lu\n%lu\n%lu\n%lu\n\n%d\n%d\n\nDay:%d\nMonth:%d\nYear:%d\n\n%s\n%s\n%d", monthsbuttoncolor, datesbuttoncolor, monthsbackground, datesbackground, textbackground, inputsignalcolor, yearzero, yearzero + yearrange / 12, startday, startmonth, startyear, datasource, specialchar, ordereddatasave);
 			WriteFile(hFile, writebuffer, strlen(writebuffer), NULL, &overlapped);
 			CloseHandle(hFile);
 			int zerothwindowpos = (yearrange/2)+1;
