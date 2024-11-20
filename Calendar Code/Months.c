@@ -6,7 +6,6 @@ TODO: Its necessary to tie down the "textouts" and "reads", and their relativity
 int poppushindex = 0;
 int popushdynamic = 0;
 static HFONT myfont = { 0 };
-int distancebetweenboxes = 0;
 int MonthYearIndex = 0;
 HWND buttonarray[24] = { 0 };
 float indexspace = 0; //always +24 is index space
@@ -19,7 +18,7 @@ LRESULT CALLBACK MonthsProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 {
 	HDC hdc;
 	static int cxClient = 0, cyClient = 0, cyChar = 0, cxChar = 0, cxCaps = 0;
-	int lastpos = 0, wheeldelta = 0;
+	int wheeldelta = 0;
 	PAINTSTRUCT ps;
 	TRIVERTEX triv[2] = {0};
 	HWND localhwnd = { 0 };
@@ -136,7 +135,7 @@ LRESULT CALLBACK MonthsProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 			triv[1].Blue = GetBValue(monthsbuttoncolor) * 255;
 			triv[1].Green = GetGValue(monthsbuttoncolor) * 255;
 			GetWindowRect(buttonarray[TrustedIndex], &windorect);
-			MapWindowPoints(NULL, hwnd, &windorect, 2);
+			MapWindowPoints(NULL, hwnd, (LPPOINT)&windorect, 2);
 			GradientFill(hdc, triv, 2, &grr, 1, GRADIENT_FILL_RECT_V);
 			triv[0].x = buttonrect.left;
 			triv[0].y = windorect.bottom;
@@ -154,22 +153,10 @@ LRESULT CALLBACK MonthsProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 		}
 		if (GlobalDebugFlag == TRUE)
 		{
-			RECT debugrect = { 0 };
 			TEXTMETRICA textmetric = { 0 };
 			HDC monthshdc = { 0 };
 			monthshdc = GetDC(GetParent(buttonarray[0]));
 			GetTextMetricsA(monthshdc, &textmetric);
-			int cychar = textmetric.tmHeight + textmetric.tmInternalLeading, oldpos = 0;
-			char* textbuffer = calloc(200, sizeof(char));
-			/*for (int i = 0; i < 24; i++)
-			{
-				oldpos = debugrect.bottom;
-				GetWindowRect(buttonarray[i], &debugrect);
-				MapWindowPoints(HWND_DESKTOP, hwnd, &debugrect, 2);
-				sprintf_s(textbuffer, 200, "%d, %d, %d, %d-%d=%d|%d|%d", i, debugrect.top, debugrect.bottom, debugrect.top, oldpos, debugrect.top - oldpos,lastpushed,lastpoped);
-				TextOutA(monthshdc, 0,0 + (cychar * i), textbuffer, strlen(textbuffer));
-				memset(textbuffer, 0, 200);
-			}*/
 			ReleaseDC(GetParent(buttonarray[0]), monthshdc);
 		}
 		hdc = NULL;
@@ -187,9 +174,8 @@ LRESULT CALLBACK MonthsProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 	case WM_MOUSEWHEEL:
 		localpoint.x = 1;
 		localpoint.y = 1;
-		POINT localpoint2 = { 0 };
 		localhwnd = ChildWindowFromPoint(hwnd, localpoint);
-		int firstbuttonid = 0, lastbuttonid = 0;
+		int firstbuttonid = 0;
 		firstbuttonid = (int)GetWindowLongPtr(localhwnd, GWLP_USERDATA);
 		wheeldelta = GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
 		if ((firstbuttonid != 1 || wheeldelta != -1) && (wheeldelta != 1 || firstbuttonid+11 < yearrange))
@@ -373,6 +359,11 @@ LRESULT ButtonProcM(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			if (GlobalDebugFlag == TRUE)
 			{
 				char* printstring = calloc(50, sizeof(char));
+				if (printstring == NULL)
+				{
+					CrashDumpFunction(4365, 1);
+					return FALSE;
+				}
 				int m = 0;
 				for (m = 0; hwnd != buttonarray[m]; m++)
 					;
@@ -468,7 +459,7 @@ int DynamicScroll(int scrollamount, HWND hwnd)
 		if (lastwindow < 0)//in case lastwindow's id is -1, then the the lastwindow-1, that is window above it, must have id of 23.
 			lastwindow = buttonfactor - 1;
 		int j = 0;
-		for (int i = firstwindow, k = -2; i != lastwindow; i++, k = i - 1)//we here beging with i = firstwindow cause we need to move firstwindow to first place, that is now empty after the last one popped,
+		for (int i = firstwindow, k = -2; i != lastwindow && i >= 0; i++, k = i - 1)//we here beging with i = firstwindow cause we need to move firstwindow to first place, that is now empty after the last one popped,
 			//k is -2 as a signal that firstwindow need to be puts at its place, that is relative to the 0y
 			//after the first iteration k is to be i-1, for GetRect calculation in order to position the target window relative to the window above it.
 		{
@@ -496,6 +487,7 @@ int DynamicScroll(int scrollamount, HWND hwnd)
 		}
 		return TRUE;
 	}
+	return TRUE;
 }
 
 BOOL buttonMCreationRoutine(int cyChar, HWND* buttonarrayd, HWND hwnd, LPWSTR* Months)

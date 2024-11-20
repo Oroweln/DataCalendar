@@ -24,7 +24,7 @@ char* rtfbuffer = { 0 };
 int rtfindex = 0;
 typedef struct mcallbackinfo
 {
-	HFILE hFile;
+	HANDLE hFile;
 	int amountoread;
 	int offset;
 }mcallbackinfo;
@@ -98,8 +98,9 @@ INT_PTR CALLBACK TextBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 	BOOL flag667 = TRUE;
 	int fagsdgadg = 0;
 	int id = 0;
+	if (lParam == 0)
+		id = 1;
 	static HBRUSH hbrbackground = { 0 }, textcolor = { 0 };
-	HDC myHdc = { 0 };
 	switch (message)
 	{
 	case WM_INITDIALOG:
@@ -140,15 +141,15 @@ LRESULT TextBoxInputSbc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT
 {
 	static BOOL CtrlPressed = FALSE;
 	BOOL stupidflag = FALSE, datepresentflag = 0;
+
+	if (dwRefData == 0 || uIdSubclass == 0)
+		stupidflag = 1;
 	int appendlocationindex = 0, amountread = 0;
 	OVERLAPPED overlapstruct = { 0 };
 	HANDLE hFile = { 0 };
 	CHARFORMAT static cf = { 0 };
 	LOGFONT lgf = { 0 };
 	HMENU hPopMenu = { 0 };
-	HDC temphdc = { 0 };
-	CHARRANGE crc = { 0 };
-	CHARFORMAT Chrfm = { 0 };
 	CHOOSEFONT thefont = { 0 };
 	int zoomden = 1, zoomnom = 1;
 	switch (uMsg)
@@ -162,7 +163,11 @@ LRESULT TextBoxInputSbc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT
 			{
 				char* readbuffer = calloc(amountread + 1, sizeof(char));
 				overlapstruct.Offset = appendlocationindex;
-				ReadFile(hFile, readbuffer, amountread, NULL, &overlapstruct);
+				if (FALSE == ReadFile(hFile, readbuffer, amountread, NULL, &overlapstruct))
+				{
+					CrashDumpFunction(3168, 0);
+					return FALSE;
+				}
 				SetWindowTextA(hWnd, readbuffer);
 			}
 			else if (RTForTXT == 0)
@@ -188,7 +193,7 @@ LRESULT TextBoxInputSbc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT
 		txtColor(TextBoxHwnd, textboxcolor);
 		break;
 	case WM_RBUTTONDOWN:
-		hPopMenu = LoadMenu(GetModuleHandle(NULL), MAKEINTRESOURCEA(TXTPOPMENU));
+		hPopMenu = LoadMenuA(GetModuleHandle(NULL), MAKEINTRESOURCEA(TXTPOPMENU));
 		HMENU hTrackPopMenu = GetSubMenu(hPopMenu, 0);
 		POINT pt = { 0 };
 		pt.x = GET_X_LPARAM(lParam);
@@ -841,6 +846,11 @@ BOOL DateWrite(int * appendindexlocation, char * dateset)
 	int datelength = strlen(dateset);
 	char* readbuffer2 = calloc(filesize, sizeof(char));
 	_memccpy(readbuffer2, readbuffer, 0, filesize);
+	if ((readbuffer2 + *appendindexlocation) == 0)
+	{
+		CrashDumpFunction(5851, 0);
+		return FALSE;
+	}
 	_memccpy(readbuffer + datelength + *appendindexlocation, readbuffer2+ *appendindexlocation, 0, filesize- *appendindexlocation +datelength);
 	_memccpy(readbuffer + *appendindexlocation, dateset, 0, datelength);
 	Overlapped.Offset = (DWORD)*appendindexlocation;
@@ -1033,7 +1043,7 @@ void SaveRichTextToFile(HWND hWnd, LPCWSTR filename)
 DWORD CALLBACK EditStreamInCallback(DWORD_PTR dwCookie, LPBYTE pbBuff, LONG cb, LONG* pcb)
 {
 	mcallbackinfo * mydata = dwCookie;
-	HFILE hFile = mydata->hFile;
+	HANDLE hFile = mydata->hFile;
 	OVERLAPPED overlapstruct = { 0 };
 	overlapstruct.Offset = mydata->offset;
 

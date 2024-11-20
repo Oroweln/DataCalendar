@@ -99,7 +99,9 @@ LRESULT CALLBACK DatesProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam
 		fontdownright.x = temprect.right;
 		fontdownright.y = temprect.bottom;
 
-		int returnval21424 = MoveWindow(FontBoxHwnd, fontrect.left, fontrect.top, fontrect.right - fontrect.left, fontrect.bottom - fontrect.top, TRUE);
+		BOOL returnval21424 = MoveWindow(FontBoxHwnd, fontrect.left, fontrect.top, fontrect.right - fontrect.left, fontrect.bottom - fontrect.top, TRUE);
+		if (returnval21424 == FALSE)
+			CrashDumpFunction(2104, 0);
 		UpdateWindow(FontBoxHwnd);
 		ShowWindow(FontBoxHwnd, SW_SHOW);
 
@@ -205,7 +207,7 @@ LRESULT CALLBACK DatesProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam
 			{
 				int linefact = TrustedIndex / 7;
 				GetWindowRect(buttondates[TrustedIndex], &windorect);
-				MapWindowPoints(NULL, hwnd, &windorect, 2);
+				MapWindowPoints(NULL, hwnd, (LPPOINT)&windorect, 2);
 				triv[0].x = windorect.left;
 				triv[0].y = windorect.top - ysize / 20;
 				triv[1].x = windorect.right;
@@ -336,7 +338,6 @@ LRESULT CALLBACK ButtonProcD(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 	RECT localrect = { 0 };
 	static BOOL dateflags[32], Firstbuttonflag = TRUE;
 	HBRUSH hBrush;
-	char* pusikurac = { 0 };
 	SYSTEMTIME temptime = { 0 };
 	static int lindex = 0;
 
@@ -739,7 +740,6 @@ HWND MarkRemoveRoutine(int offsetpresent, int shiuze, OVERLAPPED fuckshit, HANDL
 		char markdata[40] = { 0 };
 		int sizetoedit = shiuze - fuckshit.Offset;
 		char* filebuffer = calloc(sizetoedit, sizeof(char));
-		int returnval = 0;
 		if ((ReadFile(hFile, filebuffer, sizetoedit, NULL, &fuckshit) == FALSE) || filebuffer == NULL)
 		{
 			free(filebuffer);
@@ -1449,6 +1449,7 @@ int CALLBACK EnumFontFamilyProc(const LOGFONT* lpelfe, const void* lpntme, DWORD
 {
 	static int amount = 3;
 	static int index = 0;
+	char* tempppointer = 0;
 	WCHAR fontname[100] = { 0 };
 	//*fontname = lpelfe->lfFaceName;
 	wmemcpy_s(fontname, 100,lpelfe->lfFaceName, 32);
@@ -1456,13 +1457,38 @@ int CALLBACK EnumFontFamilyProc(const LOGFONT* lpelfe, const void* lpntme, DWORD
 		return 0;
 	if (fontlist == NULL)
 	{
-		fontlist = calloc(sizeof(WCHAR*), 2);
-		Fontdata = calloc(sizeof(LOGFONT*), 2);
+		tempppointer = calloc(sizeof(WCHAR*), 2);
+		if (tempppointer == NULL)
+		{
+			CrashDumpFunction(31464, 1);
+			return FALSE;
+		}
+		fontlist = tempppointer;
+		tempppointer = calloc(sizeof(LOGFONT*), 2);
+		if (tempppointer == NULL)
+		{
+			CrashDumpFunction(31468, 1);
+			return FALSE;
+		}
+		Fontdata = tempppointer;
 	}
 	else
 	{
-		fontlist = realloc(fontlist, sizeof(WCHAR*) * amount);
-		Fontdata = realloc(Fontdata, sizeof(LOGFONT*) * amount);
+		tempppointer = realloc(fontlist, sizeof(WCHAR*) * amount);
+		if (tempppointer == NULL)
+		{
+			CrashDumpFunction(31475, 1);
+			return FALSE;
+		}
+		fontlist = tempppointer;
+		tempppointer = realloc(Fontdata, sizeof(LOGFONT*) * amount);
+		if (tempppointer == NULL)
+		{
+			CrashDumpFunction(31488, 1);
+			return FALSE;
+		}
+		Fontdata = tempppointer;
+		
 	}
 	fontlist[index] = calloc(32, sizeof(WCHAR));
 	wmemcpy_s(fontlist[index], 100, fontname, 32);

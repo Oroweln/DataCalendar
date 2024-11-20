@@ -196,7 +196,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 				CrashDumpFunction(3, 0);
 				return 0;
 			}
-			memset(tempstring, 0, filesize+5);
+			memset(tempstring, 0, (int)filesize+5);
 			readflag = ReadFile(hFile, tempstring, filesize, &filesize, NULL);
 			if (readflag == FALSE)
 				CrashDumpFunction(2, 0);
@@ -2031,7 +2031,7 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 	double dummyintfloat = 0, ifstatement1 = 0, ifstatement2 = 0;
 	int static mstartyear = 0, mstartmonth = 0, mstartday = 0, oldmonth = 0, symbolindex = 0;
 	int static timesinvoked = 0;
-	static char signed stateflag[100] = { 0 };//used for arithemtic flags and if statements, capable of nesting them.
+	static int stateflag[100] = { 0 };//used for arithemtic flags and if statements, capable of nesting them.
 	/*Formating is thus like this, symbolsymbolsymbol, since there is 19 symbols each number represent a symbol*/
 	/*
 	* 0 - sqrt
@@ -2757,7 +2757,7 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 							return FALSE;
 						}
 						sprintf_s(tempvariable, 28,"%lli", charspassed);
-						templength = strlen(tempvariable);
+						templength = (int)strlen(tempvariable);
 						difference = templength - macrolength;
 						if (difference > 0)//add additional memory and push forward
 						{
@@ -2783,7 +2783,7 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 						dummyint = 0;
 						tempvariable = calloc(30, sizeof(char));
 						sprintf_s(tempvariable, 30,"%lli", newlinespassed);
-						templength = strlen(tempvariable);
+						templength = (int)strlen(tempvariable);
 						difference = templength - macrolength;
 						if (difference > 0)//add additional memory and push forward
 						{
@@ -2809,7 +2809,7 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 						dummyint = 0;
 						tempvariable = calloc(30, sizeof(char));
 						sprintf_s(tempvariable, 30,"%lli", charspassed);
-						templength = strlen(tempvariable);
+						templength = (int)strlen(tempvariable);
 						difference = templength - macrolength;
 						if (difference > 0)//add additional memory and push forward
 						{
@@ -2854,7 +2854,7 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 						}
 						tempvariable = calloc(30, sizeof(char));
 						sprintf_s(tempvariable, 30,"%i", dummyint);
-						templength = strlen(tempvariable);
+						templength = (int)strlen(tempvariable);
 						//replace the ! macro members with results, move index i to the first position of the result
 						for (int l = symbolindex-1; l >= 0; l--)
 						{
@@ -2962,7 +2962,7 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 										{
 											{
 												for (; n < 38 && myswitch == FALSE; n++)
-													if (0 == comparestrings(macroformated[i + 1], "!EndIf"))
+													if (0 == comparestrings(macroformated+(i+1), "!EndIf"))
 														myswitch = TRUE;//kill loop sitting at EndIf
 											}
 										}
@@ -2979,7 +2979,7 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 						}
 						tempvariable = calloc(30, sizeof(char));
 						sprintf_s(tempvariable, 30,"%lf", dummyintfloat);
-						templength = strlen(tempvariable);
+						templength = (int)strlen(tempvariable);
 						for (int l = symbolindex-1; l >= 0; l--)
 						{
 							switch (stateflag[l])
@@ -3085,7 +3085,7 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 										{
 											{
 												for (; n < 38 && myswitch == FALSE; n++)
-													if (0 == comparestrings(macroformated[i + 1], "!EndIf"))
+													if (0 == comparestrings(macroformated+(i + 1), "!EndIf"))
 														myswitch = TRUE;//kill loop sitting at EndIf
 											}
 										}
@@ -3112,7 +3112,7 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 							{
 								{
 									for (; n < 38 && myswitch == FALSE; n++)
-										if (0 == comparestrings(macroformated[i + 1], "!StringApply"))
+										if (0 == comparestrings(macroformated + (i + 1), "!StringApply"))
 											myswitch = TRUE;//kill loop at !StringApply
 								}
 							}
@@ -3175,7 +3175,7 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 						break;
 					}
 				}
-				length = strlen(macroformated);
+				length = (int)strlen(macroformated);
 		}
 	}
 	CloseHandle(hFile);
@@ -3187,7 +3187,7 @@ INT_PTR CALLBACK MarkBoxInputSrc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 	switch (message)
 	{
 	case WM_CHAR:
-		if (wParam == specialchar[0])
+		if (wParam == (unsigned char)specialchar[0])
 		{
 			return FALSE;//dont type in start
 		}
@@ -3224,8 +3224,7 @@ INT_PTR CALLBACK ListBoxSrc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 //Deals with arithmetics, capable of nesting
 int NumbersFunction(int * symbolsarray, int maxsymbols, char * macroformated, int numbersbegginingindex, BOOL FloatFlag, int * lastbyteindex)
 {
-	int returnvalue = 0, number = 0, index = 0, length = 0, number2 = 0, sumarray[100] = { 0 }, number2factor = 0;//number2factor is incremented each time a number 2, number in front of number the called the function is called. Once incremented it uses another number in front as number 2, while the old number 2 is simply assumed as part of already calculated number. If there is no more number2 then it will be -1 and any math that necessiates it will fail
-	char* tempvariable = NULL;
+	int number = 0, index = 0, length = 0, number2 = 0, number2factor = 0;//number2factor is incremented each time a number 2, number in front of number the called the function is called. Once incremented it uses another number in front as number 2, while the old number 2 is simply assumed as part of already calculated number. If there is no more number2 then it will be -1 and any math that necessiates it will fail
 	long double numberf1 = 0, numberf2 = 0;
 	number = StrToIntA(macroformated+(numbersbegginingindex + 7));
 		for (int i = maxsymbols-1; i >= 0; i--)
@@ -3235,20 +3234,20 @@ int NumbersFunction(int * symbolsarray, int maxsymbols, char * macroformated, in
 				switch (symbolsarray[i])
 				{
 				case 1://exponent
-					number = exp(number);
+					number = (int)exp(number);
 					break;
 				case 0://sqrt
-					number = sqrt(number);
+					number = (int)sqrt(number);
 					break;
 				case 5://Logarithm, number2 determines base, number determines the argument
-					length = strlen(macroformated);
+					length = (int)strlen(macroformated);
 					for (index = numbersbegginingindex + 7; index <= length && isdigit(macroformated[index]); index++)
 						;
 					if ((0 == comparestrings(macroformated + (index), "!Number")))
 					{
 						number2 = StrToIntA(macroformated+(index + 7));
 						number2factor++;
-						number = log10(number) / log10(number2);
+						number = (int)(log10(number) / log10(number2));
 						numbersbegginingindex += index + 7;
 					}
 					else
@@ -3258,7 +3257,7 @@ int NumbersFunction(int * symbolsarray, int maxsymbols, char * macroformated, in
 					}
 					break;
 				case 6://Division, number is dividend, number2 divisor
-					length = strlen(macroformated);
+					length = (int)strlen(macroformated);
 					for (index = numbersbegginingindex + 7; index <= length && isdigit(macroformated[index]); index++)
 						;
 					if ((0 == comparestrings(macroformated + (index), "!Number")))
@@ -3275,7 +3274,7 @@ int NumbersFunction(int * symbolsarray, int maxsymbols, char * macroformated, in
 					}
 					break;
 				case 2://Multiplication
-					length = strlen(macroformated);
+					length = (int)strlen(macroformated);
 					for (index = numbersbegginingindex + 7; index <= length && isdigit(macroformated[index]); index++)
 						;
 					if ((0 == comparestrings(macroformated + (index), "!Number")))
@@ -3292,7 +3291,7 @@ int NumbersFunction(int * symbolsarray, int maxsymbols, char * macroformated, in
 					}
 					break;
 				case 3://Plus, //get number 2 and sum it up with number 1 basically
-					length = strlen(macroformated);
+					length = (int)strlen(macroformated);
 					for (index = numbersbegginingindex + 7; index <= length && isdigit(macroformated[index]); index++)
 						;
 					if ((0 == comparestrings(macroformated + index, "!Number")))
@@ -3309,7 +3308,7 @@ int NumbersFunction(int * symbolsarray, int maxsymbols, char * macroformated, in
 					}
 					break;
 				case 4://Minus
-					length = strlen(macroformated);
+					length = (int)strlen(macroformated);
 					for (index = numbersbegginingindex + 7; index <= length && isdigit(macroformated[index]); index++)
 						;
 					if ((0 == comparestrings(macroformated + (index), "!Number")))
@@ -3326,7 +3325,7 @@ int NumbersFunction(int * symbolsarray, int maxsymbols, char * macroformated, in
 					}
 					break;
 				case 7://Sum
-					length = strlen(macroformated);
+					length = (int)strlen(macroformated);
 					for (index = numbersbegginingindex + 7; index <= length; index++)
 					{
 						if ((0 == comparestrings(macroformated + (index), "!Number")))
@@ -3358,7 +3357,7 @@ int NumbersFunction(int * symbolsarray, int maxsymbols, char * macroformated, in
 					numberf1 = sqrtl(numberf1);
 					break;
 				case 5://Logarithm, number2 determines base, number determines the argument
-					length = strlen(macroformated);
+					length = (int)strlen(macroformated);
 					for (index = numbersbegginingindex + 7; index <= length && isdigit(macroformated[index]); index++)
 						;
 					if ((0 == comparestrings(macroformated + (index), "!Number")))
@@ -3371,11 +3370,11 @@ int NumbersFunction(int * symbolsarray, int maxsymbols, char * macroformated, in
 					else
 					{
 						numberf2 = -1;
-						return numberf1;
+						return (int)numberf1;
 					}
 					break;
 				case 6://Division, number is dividend, number2 divisor
-					length = strlen(macroformated);
+					length = (int)strlen(macroformated);
 					for (index = numbersbegginingindex + 7; index <= length && isdigit(macroformated[index]); index++)
 						;
 					if ((0 == comparestrings(macroformated + (index), "!Number")))
@@ -3388,11 +3387,11 @@ int NumbersFunction(int * symbolsarray, int maxsymbols, char * macroformated, in
 					else
 					{
 						numberf2 = -1;
-						return numberf1;
+						return (int)numberf1;
 					}
 					break;
 				case 2://Multiplication
-					length = strlen(macroformated);
+					length = (int)strlen(macroformated);
 					for (index = numbersbegginingindex + 7; index <= length && isdigit(macroformated[index]); index++)
 						;
 					if ((0 == comparestrings(macroformated + (index), "!Number")))
@@ -3405,11 +3404,11 @@ int NumbersFunction(int * symbolsarray, int maxsymbols, char * macroformated, in
 					else
 					{
 						numberf2 = -1;
-						return numberf1;
+						return (int)numberf1;
 					}
 					break;
 				case 3://Plus
-					length = strlen(macroformated);
+					length = (int)strlen(macroformated);
 					for (index = numbersbegginingindex + 7; index <= length && isdigit(macroformated[index]); index++)
 						;
 					if ((0 == comparestrings(macroformated + (index), "!Number")))
@@ -3422,11 +3421,11 @@ int NumbersFunction(int * symbolsarray, int maxsymbols, char * macroformated, in
 					else
 					{
 						numberf2 = -1;
-						return numberf1;
+						return (int)numberf1;
 					}
 					break;
 				case 4://Minus
-					length = strlen(macroformated);
+					length = (int)strlen(macroformated);
 					for (index = numbersbegginingindex + 7; index <= length && isdigit(macroformated[index]); index++)
 						;
 					if ((0 == comparestrings(macroformated + (index), "!Number")))
@@ -3439,11 +3438,11 @@ int NumbersFunction(int * symbolsarray, int maxsymbols, char * macroformated, in
 					else
 					{
 						numberf2 = -1;
-						return numberf1;
+						return (int)numberf1;
 					}
 					break;
 				case 7://Sum
-					length = strlen(macroformated);
+					length = (int)strlen(macroformated);
 					for (index = numbersbegginingindex + 7; index <= length; index++)
 					{
 						if ((0 == comparestrings(macroformated + (index), "!Number")))
@@ -3456,7 +3455,7 @@ int NumbersFunction(int * symbolsarray, int maxsymbols, char * macroformated, in
 						else if (isdigit(macroformated[numbersbegginingindex + index]) == FALSE)
 						{
 							numberf2 = -1;
-							return numberf1;
+							return (int)numberf1;
 						}
 					}
 					break;
@@ -3479,20 +3478,15 @@ int NumbersFunction(int * symbolsarray, int maxsymbols, char * macroformated, in
 			for (kl = 0; isdigit(macroformated[7 + index + kl]); kl++)
 				;
 			*lastbyteindex = index + 7+kl;
-			return numberf1;
+			return (int)numberf1;
 		}
 }
 
-int ifstatmentfunction()
-{
-
-	return TRUE;
-}
 ;//beggining to the end linear simple string comparing
 BOOL comparestrings(char* string1, char* string2)
 {
-	int string1length = strlen(string1);
-	int string2length = strlen(string2);
+	int string1length = (int)strlen(string1);
+	int string2length = (int)strlen(string2);
 	for (int i = 0; i < string1length && i < string2length; i++)
 	{
 		if (string1[i] != string2[i])
@@ -3507,10 +3501,10 @@ INT_PTR CALLBACK DlgColorWindows(HWND hwndDlg, UINT message, WPARAM wParam, LPAR
 {
 	static HWND colorbutton = { 0 };
 	static COLORREF * button8color = { 0 }, customcolors[20] = { 0 };
-	HDC tempDC = { 0 };
 	static HWND oghwnd = { 0 };
-	static int tripval = 0, filesize = 0; 
-	static HFILE hFile = { 0 };
+	static int tripval = 0;
+	static DWORD filesize = 0;
+	static HANDLE hFile = { 0 };
 	static char* tempstring = { 0 };
 	switch (message)
 	{
@@ -3522,7 +3516,7 @@ INT_PTR CALLBACK DlgColorWindows(HWND hwndDlg, UINT message, WPARAM wParam, LPAR
 		if (wParam == IDC_BUTTON8)
 		{
 			DRAWITEMSTRUCT * drawstruck = { 0 };
-			drawstruck = lParam;
+			drawstruck = (DRAWITEMSTRUCT*)lParam;
 			HBRUSH tempbrush = { 0 };
 			if (button8color != NULL)
 				tempbrush = CreateSolidBrush(*button8color);
@@ -3584,7 +3578,7 @@ INT_PTR CALLBACK DlgColorWindows(HWND hwndDlg, UINT message, WPARAM wParam, LPAR
 				SetFilePointer(hFile, 0, NULL, FILE_BEGIN);
 				SetEndOfFile(hFile);
 				sprintf_s(tempstring, 1000, "%lu\n%lu\n%lu\n%lu\n%lu\n%lu\n\n%d\n%d\n\nDay:%d\nMonth:%d\nYear:%d\n\n%s\n%s\n%d", monthsbuttoncolor, datesbuttoncolor, monthsbackground, datesbackground, textbackground, inputsignalcolor, yearzero, yearzero + yearrange / 12, startday, startmonth, startyear, datasource, specialchar, ordereddatasave);
-				WriteFile(hFile, writebuffer, strlen(writebuffer), &filesize, NULL);
+				WriteFile(hFile, writebuffer, (DWORD)strlen(writebuffer), &filesize, NULL);
 				if(hFile > 0)
 					CloseHandle(hFile);
 				free(tempstring);
@@ -3643,11 +3637,14 @@ INT_PTR CALLBACK DlgMonthsRange(HWND hwndDlg, UINT message, WPARAM wParam, LPARA
 {
 	BOOL failcheck = TRUE;
 	static HWND hwndDlgMain = { 0 };
-	int filesize = 0, rangeyearf = 0, rangeyearl = 0;
+	int tmpvar = 0, rangeyearf = 0, rangeyearl = 0;
 	static char* tempstring = { 0 };
-	char* readbuffer = { 0 };
-	HFILE hFile = { 0 };
+	HANDLE hFile = { 0 };
 	static OVERLAPPED overlapped = { 0 };
+	if (lParam == 0)
+	{
+		tmpvar = 1;
+	}
 	switch (message)
 	{
 	case WM_INITDIALOG:
@@ -3669,7 +3666,6 @@ INT_PTR CALLBACK DlgMonthsRange(HWND hwndDlg, UINT message, WPARAM wParam, LPARA
 				rangeyearl = 1;
 			if (rangeyearf == 0)
 				rangeyearf = 1;
-			int DUVAJKURAC = 0;
 			CalendarCreate(1, rangeyearf, rangeyearl);
 			tempstring = calloc(1000, sizeof(char));
 			if (tempstring == NULL)
@@ -3688,7 +3684,7 @@ INT_PTR CALLBACK DlgMonthsRange(HWND hwndDlg, UINT message, WPARAM wParam, LPARA
 				return FALSE;
 			}
 			sprintf_s(tempstring, 1000, "%lu\n%lu\n%lu\n%lu\n%lu\n%lu\n\n%d\n%d\n\nDay:%d\nMonth:%d\nYear:%d\n\n%s\n%s\n%d", monthsbuttoncolor, datesbuttoncolor, monthsbackground, datesbackground, textbackground, inputsignalcolor, yearzero, yearzero + yearrange / 12, startday, startmonth, startyear, datasource, specialchar, ordereddatasave);
-			WriteFile(hFile, writebuffer, strlen(writebuffer), NULL, &overlapped);
+			WriteFile(hFile, writebuffer, (DWORD)strlen(writebuffer), NULL, &overlapped);
 			CloseHandle(hFile);
 			int zerothwindowpos = (yearrange/2)+1;
 			for (int lk = 0; lk < buttonfactor; lk++, zerothwindowpos++)
@@ -3708,6 +3704,7 @@ INT_PTR CALLBACK DlgMonthsRange(HWND hwndDlg, UINT message, WPARAM wParam, LPARA
 	default:
 		return FALSE;
 	}
+	return FALSE;
 }
 
 typedef struct dateanddata
@@ -3731,14 +3728,21 @@ char* DataSaveReordering(char* readbuffer)
 {
 	lpdateanddata mydataset = calloc(1, sizeof(fagdata));
 	int datesamount = 0;
-	int stringlength = strlen(readbuffer);
+	int stringlength = (int)strlen(readbuffer);
 	//1st get all dates and data
 	for (int i = 0; i < stringlength; i++)
 	{
 		if (readbuffer[i] == specialchar[0])
 		{//allocate the struct
 			//allocate the pointers to the array of struct pointers
-			mydataset = realloc(mydataset, sizeof(fagdata)*(datesamount+2));
+			char* temppointer = NULL;
+			temppointer = realloc(mydataset, sizeof(fagdata)*(datesamount+2));
+			if (temppointer == NULL)
+			{
+				CrashDumpFunction(13745, 0);
+				return FALSE;
+			}
+			mydataset = (lpdateanddata)temppointer;
 			//initialize the pointer necessary
 			mydataset[datesamount] = calloc(1, sizeof(dateanddata));
 			//set the date of the struct
@@ -3747,12 +3751,12 @@ char* DataSaveReordering(char* readbuffer)
 			_memccpy(mydataset[datesamount]->date+1, readbuffer + i, specialchar[0], 20);
 			//get the datalength
 			int tempdatalength = 0;
-			for (int m = i + strlen(mydataset[datesamount]->date)-1; m < stringlength && readbuffer[m] != specialchar[0]; m++)//-1 cause we plused it before
+			for (int m = i + (int)strlen(mydataset[datesamount]->date)-1; m < stringlength && readbuffer[m] != specialchar[0]; m++)//-1 cause we plused it before
 				tempdatalength++;
 			mydataset[datesamount]->data = calloc(tempdatalength + 10, sizeof(char));
 			//paste the data
 			_memccpy(mydataset[datesamount]->data, readbuffer + i + strlen(mydataset[datesamount]->date)-1, specialchar[0], tempdatalength);
-			i += tempdatalength + strlen(mydataset[datesamount]->date)-1;//to liquidite the +1 we had manually added
+			i += tempdatalength + (int)strlen(mydataset[datesamount]->date)-1;//to liquidite the +1 we had manually added
 			datesamount++;
 			i--;//to avoid skipping the '*' upon i++ at the end of the loop
 		}
@@ -3760,9 +3764,13 @@ char* DataSaveReordering(char* readbuffer)
 
 	//now memset and apply new data
 	memset(readbuffer, 0, stringlength);
-	int bpos = 0;
 	pdate datesarray = calloc(datesamount, sizeof(date));
 	char* tempdate = calloc(20, sizeof(char));
+	if (tempdate == 0)
+	{
+		CrashDumpFunction(13776, 1);
+		return FALSE;
+	}
 	//arrange the years, all data arrange from smallest to largest
 	for (int i = 0; i < datesamount; i++)
 	{
@@ -3872,6 +3880,11 @@ char* DataSaveReordering(char* readbuffer)
 
 	memset(readbuffer, 0, stringlength);
 	char* date = calloc(20, sizeof(char));
+	if (date == NULL)
+	{
+		CrashDumpFunction(13889, 1);
+		return FALSE;
+	}
 	for (int i = 0; i < datesamount; i++)
 	{
 		//get the first date
@@ -3926,7 +3939,7 @@ char* DataSaveReordering(char* readbuffer)
 
 int NearestDate(int mflag, int filesize, char* readbuffer, int* appendindexlocation, char* dateset, int i)
 {
-	int yearchars = strlen(dateset + 7) - 1;//-1 removes the star at the end 
+	int yearchars = (int)strlen(dateset + 7) - 1;//-1 removes the star at the end 
 	int switchflag = 0;//when it switches means like 
 	char tempstring[12] = { 0 };
 	char tempstring2[12] = { 0 };
@@ -4015,8 +4028,8 @@ int NearestDate(int mflag, int filesize, char* readbuffer, int* appendindexlocat
 		{
 			if (readbuffer[k] == specialchar[0])//load the day and check if its larger
 			{
-				char tempstring[12] = { 0 };
-				char tempstring2[12] = { 0 };
+				memset(tempstring, 0, 12);
+				memset(tempstring2, 0, 12);
 				long long inputday = 0, presentday = 0;
 				for (int l = 1, p = 0; readbuffer[k + l] && l < 3; l++, p++)
 				{
@@ -4054,7 +4067,7 @@ int NearestDate(int mflag, int filesize, char* readbuffer, int* appendindexlocat
 	if (mflag == yearchars+4)//date found, point to it
 	{
 		*appendindexlocation = i;
-		return readbuffer;
+		return *appendindexlocation;
 	}
 	return *appendindexlocation;
 }

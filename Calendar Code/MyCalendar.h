@@ -27,7 +27,7 @@ typedef struct carrierreturnspotter
 
 typedef struct RGBcolorsData
 {
-	char colorname[50];
+	char colorname[52];
 	COLORREF RGBcolor;
 }RGBData;
 
