@@ -380,7 +380,7 @@ LRESULT CALLBACK ButtonProcMk(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPa
 		hBrush = CreateSolidBrush(RGB(200, 120, 80));
 		FillRect(hdc, &DataUpdateRect, hBrush);
 		DeleteObject(hBrush);
-		sprintf_s(memdata, 1000, "remaining: \n%llu ", TextHeapRemaining);
+		sprintf_s(memdata, 1000, "remaining: \n%zu ", TextHeapRemaining);
 		DrawTextA(hdc, memdata, -1, &DataUpdateRect, DT_LEFT);
 		//Data remaining
 		memset(memdata, 0, sizeof(char) * 1000);
@@ -599,8 +599,8 @@ LRESULT CALLBACK TempBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 	{
 	case WM_CREATE:
 		mindexspace = calloc(yearrange, sizeof(char));
-		ca = lParam;
-		GlobalIndexptr = (uintptr_t)ca->lpCreateParams;
+		ca = (CREATESTRUCTA*)lParam;
+		GlobalIndexptr = (int*)ca->lpCreateParams;
 		GlobalIndex = GlobalIndexptr[0];
 		hdc = GetDC(hwnd);
 		GetTextMetrics(hdc, &tm);

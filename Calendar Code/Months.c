@@ -40,7 +40,7 @@ LRESULT CALLBACK MonthsProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 		cxCaps = (tm.tmPitchAndFamily & 1 ? 3 : 2) * cxChar / 2;
 		cyChar = tm.tmHeight + tm.tmExternalLeading;
 		ReleaseDC(hwnd, hdc);
-		buttonMCreationRoutine(cyChar, buttonarray, hwnd, Months);
+		buttonMCreationRoutine(buttonarray, hwnd, Months);
 		return 0;
 
 	case WM_SIZE:
@@ -264,7 +264,7 @@ LRESULT ButtonProcM(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			GetClientRect(hwnd, &temprect9);
 			myfont = CreateFontA(0, temprect9.bottom / 3, 0, 0, FW_REGULAR, TRUE, FALSE, FALSE, ANSI_CHARSET, OUT_CHARACTER_PRECIS, CLIP_TT_ALWAYS, PROOF_QUALITY, FIXED_PITCH, NULL);
 			Firstbuttonflag = FALSE;
-			mindexspace = calloc(yearrange+100, sizeof(char));
+			mindexspace = calloc((size_t)yearrange+100, sizeof(char));
 		}
 		return 0;
 	case WM_LBUTTONDOWN: //memory leak happens befor buttondown message is even sent
@@ -389,7 +389,7 @@ int PopChildMonth(HWND hwnd, int lastwindow)
 	int static fag = 1;
 	RECT Temprect;
 	GetWindowRect(buttonarray[lastwindow], &Temprect);
-	MapWindowPoints(HWND_DESKTOP, GetParent(hwnd), &Temprect, 2);
+	MapWindowPoints(HWND_DESKTOP, GetParent(hwnd), (LPPOINT)&Temprect, 2);
 	MoveWindow(hwnd, Temprect.left, Temprect.top, Temprect.right-Temprect.left, Temprect.bottom-Temprect.top, TRUE);//pops the window by moving to the lastwindow pos
 	int lindex = (int)GetWindowLongPtr(hwnd, GWLP_USERDATA);
 	lindex += 24;
@@ -401,7 +401,7 @@ int PushChildMonth(HWND hwnd, int firstwindow)
 {
 	RECT Temprect;
 	GetWindowRect(buttonarray[firstwindow], &Temprect);
-	MapWindowPoints(HWND_DESKTOP, GetParent(hwnd), &Temprect, 2);
+	MapWindowPoints(HWND_DESKTOP, GetParent(hwnd), (LPPOINT)&Temprect, 2);
 	MoveWindow(hwnd, Temprect.left, Temprect.top, Temprect.right - Temprect.left, Temprect.bottom - Temprect.top, TRUE);//pushes the window by moving to the firstwindow pos
 	int lindex = (int)GetWindowLongPtr(hwnd, GWLP_USERDATA);
 	lindex -= 24;
@@ -441,7 +441,7 @@ int DynamicScroll(int scrollamount, HWND hwnd)
 			if(k>-1 && k<buttonfactor)
 			{
 				GetWindowRect(buttonarray[k], &monthsbuttonrect);
-				MapWindowPoints(HWND_DESKTOP, GetParent(hwnd), &monthsbuttonrect, 2);
+				MapWindowPoints(HWND_DESKTOP, GetParent(hwnd), (LPPOINT)&monthsbuttonrect, 2);
 			}
 			if (k == -2)//the first iteration, set the monthsbuttonrect to be the first button relative to the upper edge of the monthwindow
 			{
@@ -458,7 +458,6 @@ int DynamicScroll(int scrollamount, HWND hwnd)
 		lastwindow--;//lastwindow becomes the window before the lastwindow 
 		if (lastwindow < 0)//in case lastwindow's id is -1, then the the lastwindow-1, that is window above it, must have id of 23.
 			lastwindow = buttonfactor - 1;
-		int j = 0;
 		for (int i = firstwindow, k = -2; i != lastwindow && i >= 0; i++, k = i - 1)//we here beging with i = firstwindow cause we need to move firstwindow to first place, that is now empty after the last one popped,
 			//k is -2 as a signal that firstwindow need to be puts at its place, that is relative to the 0y
 			//after the first iteration k is to be i-1, for GetRect calculation in order to position the target window relative to the window above it.
@@ -476,7 +475,7 @@ int DynamicScroll(int scrollamount, HWND hwnd)
 			if (k > -1 && k < buttonfactor)
 			{
 				GetWindowRect(buttonarray[k], &monthsbuttonrect);
-				MapWindowPoints(HWND_DESKTOP, GetParent(hwnd), &monthsbuttonrect, 2);
+				MapWindowPoints(HWND_DESKTOP, GetParent(hwnd), (LPPOINT)&monthsbuttonrect, 2);
 			}
 			if (k == -2)//the first iteration, set the monthsbuttonrect to be the first button relative to the upper edge of the monthwindow
 			{
@@ -490,7 +489,7 @@ int DynamicScroll(int scrollamount, HWND hwnd)
 	return TRUE;
 }
 
-BOOL buttonMCreationRoutine(int cyChar, HWND* buttonarrayd, HWND hwnd, LPWSTR* Months)
+BOOL buttonMCreationRoutine(HWND* buttonarrayd, HWND hwnd, LPWSTR* Months)
 {
 	buttonrect.left = MonthRect.right / 4;
 	buttonrect.top = MonthRect.top;

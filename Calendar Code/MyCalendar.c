@@ -187,7 +187,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			char* totaltemp = NULL;
 			if (tempstring == 0)
 				CrashDumpFunction(3, 0);
-			totaltemp = realloc(tempstring, filesize + 10);
+			totaltemp = realloc(tempstring, (size_t)filesize + 10);
 			if (totaltemp == 0)
 				CrashDumpFunction(3, 0);
 			tempstring = totaltemp;
@@ -196,12 +196,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 				CrashDumpFunction(3, 0);
 				return 0;
 			}
-			memset(tempstring, 0, (int)filesize+5);
+			memset(tempstring, 0, (size_t)filesize+5);
 			readflag = ReadFile(hFile, tempstring, filesize, &filesize, NULL);
 			if (readflag == FALSE)
 				CrashDumpFunction(2, 0);
 			//the windowscolorsdat separates datasets by newlines
-			char* tempstring2 = calloc(filesize+100, sizeof(char));
+			char* tempstring2 = calloc((size_t)filesize+100, sizeof(char));
 			if (tempstring2 == 0)
 				CrashDumpFunction(3, 0);
 			_memccpy(tempstring2, tempstring, '\n', filesize);
@@ -475,7 +475,11 @@ BOOL ChildCreationFunction(void)
 	MarkClass.lpszMenuName = NULL,
 	MarkClass.lpszClassName = TEXT("MarkClass"),
 	MarkClass.hIconSm = NULL,};
-	RegisterClassEx(&MarkClass);
+	if (0 == RegisterClassEx(&MarkClass))
+	{
+		CrashDumpFunction(3, 1);
+		return FALSE;
+	}
 
 	WNDCLASSEX DatesClass = {
 	DatesClass.cbSize = sizeof(WNDCLASSEX),
@@ -490,7 +494,11 @@ BOOL ChildCreationFunction(void)
 	DatesClass.lpszMenuName = NULL,
 	DatesClass.lpszClassName = TEXT("Dates Class"),
 	DatesClass.hIconSm = NULL,};
-	RegisterClassEx(&DatesClass);
+	if (0 == RegisterClassEx(&DatesClass))
+	{
+		CrashDumpFunction(3, 1);
+		return FALSE;
+	}
 
 	WNDCLASSEX MonthsClass = {
 	MonthsClass.cbSize = sizeof(WNDCLASSEX),
@@ -505,12 +513,13 @@ BOOL ChildCreationFunction(void)
 	MonthsClass.lpszMenuName = NULL,
 	MonthsClass.lpszClassName = TEXT("Months class"),
 	MonthsClass.hIconSm = NULL,};
-	RegisterClassEx(&MonthsClass);
+	if (0 == RegisterClassEx(&MonthsClass))
+	{
+		CrashDumpFunction(3, 1);
+		return FALSE;
+	}
+	return TRUE;
 
-	if (&MonthsClass != FALSE && &DatesClass != FALSE && &MarkClass != FALSE)
-		return TRUE;
-	CrashDumpFunction(3, 1);
-	return FALSE;
 }
 
 BOOL ShowMessage(HWND hwnd, int XClient, int YClient, UINT message)//shows debug messages when debug mode is set.
@@ -901,7 +910,7 @@ INT_PTR CALLBACK DlgSettingsProc(HWND hwndDlg, UINT message, WPARAM wParam, LPAR
 						PusiKurac = CreateFileA(datasource, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 						char* myreadbuffer = { 0 };
 						int stringlength19 = GetFileSize(PusiKurac, NULL);
-						myreadbuffer = calloc(stringlength19 + 10, sizeof(char));
+						myreadbuffer = calloc((size_t)stringlength19 + 10, sizeof(char));
 						DWORD DwordTemp3 = 0;
 						DwordTemp3 = ReadFile(PusiKurac, myreadbuffer, stringlength19, &DwordTemp3, NULL);
 						if (DwordTemp3 == 0)
@@ -1767,7 +1776,7 @@ INT_PTR CALLBACK DlgScriptMacros(HWND hwndDlg, UINT message, WPARAM wParam, LPAR
 			macrosymboldata[0] = '%';
 			macrosymboldata[1] = (char)selection;
 			macrosymboldata[2] = specialchar[0];
-			char * readbuffer1 = calloc(fileszie+10, sizeof(char));
+			char * readbuffer1 = calloc((size_t)fileszie+10, sizeof(char));
 			OVERLAPPED overlapstruct = { 0 };
 			if (FALSE == ReadFile(hFile, readbuffer1, fileszie, NULL, &overlapstruct))
 			{
@@ -1801,14 +1810,14 @@ INT_PTR CALLBACK DlgScriptMacros(HWND hwndDlg, UINT message, WPARAM wParam, LPAR
 				firstoffset = fileszie;
 			overlapstruct.Offset = firstoffset;
 			int length = GetWindowTextLengthA(textstring2)+1;
-			char* newstring = calloc(length+2, sizeof(char));
+			char* newstring = calloc((size_t)length+2, sizeof(char));
 			GetWindowTextA((textstring2), (newstring), (length));
-			char * memoryvariable = calloc(length+fileszie+10, sizeof(char));
-			memset(memoryvariable, 0, length + fileszie + 10);
+			char * memoryvariable = calloc((size_t)length+fileszie+10, sizeof(char));
+			memset(memoryvariable, 0, (size_t)length + fileszie + 10);
 			_memccpy(memoryvariable, macrosymboldata, 0, 3);
 			_memccpy(memoryvariable + 3, newstring, 0, length);
 			memoryvariable[3 + length - 1] = specialchar[0];//close the dataset with the star
-			_memccpy(memoryvariable + 3 + length, readbuffer1 + frontoffset+2, 0, fileszie - frontoffset);
+			_memccpy(memoryvariable + 3 + length, readbuffer1 + frontoffset+2, 0, (size_t)fileszie - frontoffset);
 			int datachange = (frontoffset - firstoffset) - (length+1);
 			int amounttowrite = fileszie - firstoffset - datachange;
 			WriteFile(hFile, memoryvariable, amounttowrite, NULL, &overlapstruct);
@@ -1827,7 +1836,7 @@ INT_PTR CALLBACK DlgScriptMacros(HWND hwndDlg, UINT message, WPARAM wParam, LPAR
 				free(charsstring);
 			}
 			memset(macrolist[selection], 0, 101);//empty the macro
-			_memccpy(macrolist[selection], newstring, 0, length + 2);
+			_memccpy(macrolist[selection], newstring, 0, (size_t)length + 2);
 			CloseHandle(hFile);
 			free(tempstring);
 		//	free(absoluteretard);
@@ -1950,9 +1959,9 @@ char* ScriptFormat(char* Inputbuffer)
 				i -= 1;//point to '%'
 				if (macro < 255 && macro>-1 && macrolist[macro] != NULL)
 				{
-					_memccpy(Inputbuffer + i, Inputbuffer + i +2, 0, stringlength - 2);//removes '% and following character"
+					_memccpy(Inputbuffer + i, Inputbuffer + i +2, 0, (size_t)stringlength - 2);//removes '% and following character"
 					int mstringlength = (int)strlen(macrolist[macro]);
-					char* macroformatted = calloc(mstringlength+4, sizeof(char));
+					char* macroformatted = calloc((size_t)mstringlength+4, sizeof(char));
 					_memccpy(macroformatted, macrolist[macro], 0, mstringlength);
 					macroformatted = MacroFormating(macroformatted, firstrun);
 					mstringlength = (int)strlen(macroformatted);
@@ -1962,7 +1971,7 @@ char* ScriptFormat(char* Inputbuffer)
 						free(macroformatted);
 						return Inputbuffer;
 					}
-					_memccpy(Inputbuffer + i + mstringlength, Inputbuffer + 2, 0, stringlength - i);//moves the string forward to make space for macrostringformatted, +2 excludes the % and symbol that follows it
+					_memccpy(Inputbuffer + i + mstringlength, Inputbuffer + 2, 0, (size_t)stringlength - i);//moves the string forward to make space for macrostringformatted, +2 excludes the % and symbol that follows it
 					_memccpy(Inputbuffer + i, macroformatted, 0, mstringlength);//pastes macro into the string
 					free(macroformatted);
 					stringlength = stringlength + mstringlength;
@@ -2277,7 +2286,7 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 						break;
 					case 7://!TotalDateLines, Sum of lines within a Date
 						DateTestBufferLoad(&amountread, &overlapstruct, &appendindexlocation, &datepresent);
-						tempvariable = calloc(amountread+10, sizeof(char));
+						tempvariable = calloc((size_t)amountread+10, sizeof(char));
 						overlapstruct.Offset = appendindexlocation;
 						if (FALSE == ReadFile(hFile, tempvariable, amountread, NULL, &overlapstruct))
 						{
@@ -2290,7 +2299,7 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 								dummyint++;
 						}
 						memset(tempvariable, 0, amountread);
-						sprintf_s(tempvariable, amountread+10,"%i", dummyint);
+						sprintf_s(tempvariable, (size_t)amountread+10,"%i", dummyint);
 						templength = (int)strlen(tempvariable);
 						difference = templength - macrolength;
 						if (difference > 0)//add additional memory and push forward
@@ -2906,9 +2915,9 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 						if (difference > 0)
 						{
 							//shrinkg the string now
-							_memccpy(macroformated + i + templength, macroformated + lastbyte, 0, length - lastbyte);
+							_memccpy(macroformated + i + templength, macroformated + lastbyte, 0, (size_t)length - lastbyte);
 							//zerout the excess bytes if necessary
-							memset(macroformated + difference + i, 0, length - difference);//zerout excess bytes
+							memset(macroformated + difference + i, 0, (size_t)length - difference);//zerout excess bytes
 						}
 						free(tempvariable);
 						if (ifflag == TRUE)
@@ -3030,9 +3039,9 @@ char* MacroFormating(char* macroformated, BOOL firstrun)
 						if(difference>0)
 						{
 							//shrinkg the string now
-							_memccpy(macroformated + i + templength, macroformated + lastbyte, 0, length - lastbyte);
+							_memccpy(macroformated + i + templength, macroformated + lastbyte, 0, (size_t)length - lastbyte);
 							//zerout the excess bytes if necessary
-							memset(macroformated + difference + i, 0, length - difference);//zerout excess bytes
+							memset(macroformated + difference + i, 0, (size_t)length - difference);//zerout excess bytes
 						}
 						free(tempvariable);
 						if (ifflag == TRUE)
@@ -3736,7 +3745,7 @@ char* DataSaveReordering(char* readbuffer)
 		{//allocate the struct
 			//allocate the pointers to the array of struct pointers
 			char* temppointer = NULL;
-			temppointer = realloc(mydataset, sizeof(fagdata)*(datesamount+2));
+			temppointer = realloc(mydataset, sizeof(fagdata)*((size_t)datesamount+2));
 			if (temppointer == NULL)
 			{
 				CrashDumpFunction(13745, 0);
@@ -3753,7 +3762,7 @@ char* DataSaveReordering(char* readbuffer)
 			int tempdatalength = 0;
 			for (int m = i + (int)strlen(mydataset[datesamount]->date)-1; m < stringlength && readbuffer[m] != specialchar[0]; m++)//-1 cause we plused it before
 				tempdatalength++;
-			mydataset[datesamount]->data = calloc(tempdatalength + 10, sizeof(char));
+			mydataset[datesamount]->data = calloc((size_t)tempdatalength + 10, sizeof(char));
 			//paste the data
 			_memccpy(mydataset[datesamount]->data, readbuffer + i + strlen(mydataset[datesamount]->date)-1, specialchar[0], tempdatalength);
 			i += tempdatalength + (int)strlen(mydataset[datesamount]->date)-1;//to liquidite the +1 we had manually added

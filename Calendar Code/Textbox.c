@@ -147,10 +147,10 @@ LRESULT TextBoxInputSbc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT
 	int appendlocationindex = 0, amountread = 0;
 	OVERLAPPED overlapstruct = { 0 };
 	HANDLE hFile = { 0 };
-	CHARFORMAT static cf = { 0 };
+	CHARFORMATA static cf = { 0 };
 	LOGFONT lgf = { 0 };
 	HMENU hPopMenu = { 0 };
-	CHOOSEFONT thefont = { 0 };
+	CHOOSEFONTA thefont = { 0 };
 	int zoomden = 1, zoomnom = 1;
 	switch (uMsg)
 	{
@@ -161,7 +161,7 @@ LRESULT TextBoxInputSbc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT
 			hFile = CreateFileA(datasource, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 			if(RTForTXT == 1)
 			{
-				char* readbuffer = calloc(amountread + 1, sizeof(char));
+				char* readbuffer = calloc((size_t)amountread + 1, sizeof(char));
 				overlapstruct.Offset = appendlocationindex;
 				if (FALSE == ReadFile(hFile, readbuffer, amountread, NULL, &overlapstruct))
 				{
@@ -226,20 +226,20 @@ LRESULT TextBoxInputSbc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT
 			break;
 		case ID_GETFONT:
 			cf.cbSize = sizeof(CHARFORMAT);
-			SendMessage(hWnd, EM_GETCHARFORMAT, SCF_SELECTION, &cf);
+			SendMessage(hWnd, EM_GETCHARFORMAT, SCF_SELECTION, (LPARAM)&cf);
 			break;
 		case ID_APPLYFONT:
 			cf.cbSize = sizeof(CHARFORMAT);
-			SendMessage(hWnd, EM_SETCHARFORMAT, SCF_SELECTION, &cf);
+			SendMessage(hWnd, EM_SETCHARFORMAT, SCF_SELECTION, (LPARAM)&cf);
 			break;
 		case ID_REMOVEFONT:
 			break;
 		case ID_CHANGEFONT:
 			thefont.hwndOwner = GetParent(hWnd);
-			thefont.lpLogFont = &lgf;
+			thefont.lpLogFont = (LPLOGFONTA)&lgf;
 			thefont.Flags = CF_EFFECTS;
 			thefont.lStructSize = sizeof(CHOOSEFONT);
-			LPCHOOSEFONT lpthefont = &thefont;
+			LPCHOOSEFONT lpthefont = (LPCHOOSEFONT)&thefont;
 			ChooseFont(lpthefont);
 			cf.bCharSet = thefont.lpLogFont->lfCharSet;
 			cf.bPitchAndFamily = thefont.lpLogFont->lfPitchAndFamily;
@@ -258,7 +258,7 @@ LRESULT TextBoxInputSbc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT
 			strcpy_s(cf.szFaceName, 32,thefont.lpLogFont->lfFaceName);
 			cf.yHeight = thefont.lpLogFont->lfHeight;
 			cf.yOffset = 0;
-			SendMessage(hWnd, EM_SETCHARFORMAT, SCF_SELECTION, &cf);
+			SendMessage(hWnd, EM_SETCHARFORMAT, SCF_SELECTION, (LPARAM)&cf);
 			break;
 		case ID_ZOOMIN:
 			SendMessage(hWnd, EM_GETZOOM, (WPARAM)(&zoomnom), (LPARAM)(&zoomden));
@@ -301,7 +301,7 @@ LRESULT TextBoxInputSbc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT
 					if(RTForTXT == 1)
 					{
 						textlength = GetWindowTextLengthA(TextBoxInput);
-						pchInputBuf = calloc(textlength + 1, sizeof(char));
+						pchInputBuf = calloc((size_t)textlength + 1, sizeof(char));
 						if (pchInputBuf == NULL)
 							break;
 						GetWindowTextA((TextBoxInput), (pchInputBuf), (textlength + 1));
@@ -310,7 +310,7 @@ LRESULT TextBoxInputSbc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT
 					{
 						EDITSTREAM es = { 0 };
 						PPch = calloc(2, sizeof(char*));
-						es.dwCookie = PPch;
+						es.dwCookie = (DWORD_PTR)PPch;
 						es.pfnCallback = EditStreamOutCallback;
 						SendMessage(hWnd, EM_STREAMOUT, SF_RTF, (LPARAM)&es);
 						pchInputBuf = PPch[0];
@@ -343,7 +343,7 @@ LRESULT TextBoxInputSbc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT
 
 int DateTestBufferLoad(int* amountread, OVERLAPPED* overlapstruct, int* appendlocationindex, BOOL* datepresent)
 {
-	int xtoalloc = 0, ytoalloc = 0;
+	int xtoalloc = 0;
 	HANDLE hFile = { 0 };
 	hFile = CreateFileA(datasource, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS , FILE_ATTRIBUTE_NORMAL, NULL);
 	int amounttowrite = 0, oldlocindex = 0;
@@ -413,7 +413,7 @@ BOOL savingFunction(int* appendlocationindex, char * pchInputBuf, OVERLAPPED* ov
 	*amountread = GetFileSize(hFile, NULL);//amountread will be here used as total length
 	returnval = GetLastError();
 	//to do this get already existing data's size
-	char * tempcharbuf = calloc(*amountread+5,sizeof(char));
+	char * tempcharbuf = calloc((size_t)*amountread+5,sizeof(char));
 	if (tempcharbuf == NULL)
 	{
 		CrashDumpFunction(247,0);
@@ -456,7 +456,7 @@ BOOL savingFunction(int* appendlocationindex, char * pchInputBuf, OVERLAPPED* ov
 		}
 		hFile = CreateFileA(datasource, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 		*amountread = GetFileSize(hFile, NULL);//update amount read
-		noverlapstruct.Offset = strlen(selecteddate1) + *appendlocationindex;//point at the beggining of data instead of mark data
+		noverlapstruct.Offset = (DWORD)(strlen(selecteddate1) + *appendlocationindex);//point at the beggining of data instead of mark data
 		free(selecteddate1);
 		CloseHandle(hFile);
 	}
@@ -513,12 +513,12 @@ BOOL LargeDataWrite(char* pchInputBuf, OVERLAPPED* overlapstruct, int* amountrea
 	}
 	if ((*amountread - overlapstruct->Offset) == 0)//we need to append data at EOF
 	{
-		WriteFile(hFile, pchInputBuf, strLength, &((DWORD)shit), overlapstruct);
+		WriteFile(hFile, pchInputBuf, (DWORD)strLength, &((DWORD)shit), overlapstruct);
 	}
 	else//we need to push data forward and then append data
 	{
 		
-		_memccpy(readbuffer2 + strLength, readbuffer + *oldstringlength, 0, *amountread - overlapstruct->Offset);//push daata forward with help of offset, readbuffer+*oldstringlength ensure that the already present "oldstring" isnt pushed forwards but overwritten
+		_memccpy(readbuffer2 + strLength, readbuffer + *oldstringlength, 0, (size_t)*amountread - overlapstruct->Offset);//push daata forward with help of offset, readbuffer+*oldstringlength ensure that the already present "oldstring" isnt pushed forwards but overwritten
 		_memccpy(readbuffer2, pchInputBuf, 0, strLength);//append data at the newly created space
 		WriteFile(hFile, readbuffer2, (DWORD)(((unsigned long long)(*amountread) - overlapstruct->Offset) + ((unsigned long long)strLength - *oldstringlength)), &((DWORD)shit), overlapstruct);
 	}
@@ -533,7 +533,7 @@ BOOL SmallDataWrite(char * pchInputBuf, OVERLAPPED* overlapstruct, int* amountre
 	int shit = 0;
 	char* readbuffer = calloc(*amountread+strLength, sizeof(char));
 	char* readbuffer2 = calloc(*amountread+strLength, sizeof(char));
-	int offset = overlapstruct->Offset + *oldstringlength;//offset will skip reading the data of the given date date as it will be wholly wiped out and replaced
+	int offset = (int)(overlapstruct->Offset + *oldstringlength);//offset will skip reading the data of the given date date as it will be wholly wiped out and replaced
 	if (readbuffer == NULL || readbuffer2 == NULL || pchInputBuf == NULL)
 	{
 		CrashDumpFunction(253,0);
@@ -550,7 +550,7 @@ BOOL SmallDataWrite(char * pchInputBuf, OVERLAPPED* overlapstruct, int* amountre
 	}
 	if ((*amountread - offset) == 0)//we need to append data at EOF
 	{
-		WriteFile(hFile, pchInputBuf, strLength, &((DWORD)shit), overlapstruct);
+		WriteFile(hFile, pchInputBuf, (DWORD)strLength, &((DWORD)shit), overlapstruct);
 	}
 	else//we are pasting in middle of data
 	{
@@ -600,7 +600,7 @@ BOOL EmptyDataWrite(OVERLAPPED* overlapstruct, int* amountread, HANDLE hFile, si
 	_memccpy(readbuffer2, readbuffer+*oldstringlength+12, 0, *amountread-*oldstringlength-12);
 	
 	WriteFile(hFile, readbuffer2, (*amountread - overlapstruct->Offset) - (DWORD)(*oldstringlength + 12), &((DWORD)shit), overlapstruct);
-	SetFilePointer(hFile, -12-*oldstringlength, NULL, FILE_END);
+	SetFilePointer(hFile, (LONG)(-12 - *oldstringlength), NULL, FILE_END);
 	SetEndOfFile(hFile);
 	free(readbuffer);
 	free(readbuffer2);
@@ -837,13 +837,12 @@ BOOL DateWrite(int * appendindexlocation, char * dateset)
 	//scan for the year dataset range
 	findthenearestdate(filesize, readbuffer, dateset, appendindexlocation, 1);
 	//walk back to the beginning of date set
-	int dateplace = 0;
 	for (*appendindexlocation = *appendindexlocation-1; *appendindexlocation >= 0 && readbuffer[*appendindexlocation] != specialchar[0]; (*appendindexlocation)--)
 	{
 		;
 	}
 	//now push all data forward and paste the dateset
-	int datelength = strlen(dateset);
+	int datelength = (int)strlen(dateset);
 	char* readbuffer2 = calloc(filesize, sizeof(char));
 	_memccpy(readbuffer2, readbuffer, 0, filesize);
 	if ((readbuffer2 + *appendindexlocation) == 0)
@@ -851,10 +850,10 @@ BOOL DateWrite(int * appendindexlocation, char * dateset)
 		CrashDumpFunction(5851, 0);
 		return FALSE;
 	}
-	_memccpy(readbuffer + datelength + *appendindexlocation, readbuffer2+ *appendindexlocation, 0, filesize- *appendindexlocation +datelength);
+	_memccpy(readbuffer + datelength + *appendindexlocation, readbuffer2+ *appendindexlocation, 0, (size_t)filesize- *appendindexlocation +datelength);
 	_memccpy(readbuffer + *appendindexlocation, dateset, 0, datelength);
 	Overlapped.Offset = (DWORD)*appendindexlocation;
-	WriteFile(hFile, readbuffer+*appendindexlocation, strlen(readbuffer)-*appendindexlocation, &byteswritten, &Overlapped);
+	WriteFile(hFile, readbuffer + *appendindexlocation, (DWORD)(strlen(readbuffer) - *appendindexlocation), &byteswritten, &Overlapped);
 	free(readbuffer);
 	free(readbuffer2);
 	CloseHandle(hFile);
@@ -929,7 +928,7 @@ char * DateTextShow(char * selecteddate1)
 //richedit quick functions 
 
 void txtBold(HWND hWindow) {
-	CHARFORMAT boldfont;
+	CHARFORMAT boldfont = { 0 };
 	boldfont.cbSize = sizeof(CHARFORMAT);
 	boldfont.dwMask = CFM_BOLD;
 	boldfont.dwEffects = CFE_BOLD;
@@ -937,7 +936,7 @@ void txtBold(HWND hWindow) {
 }
 
 void txtUnderlined(HWND hWindow) {
-	CHARFORMAT2 underlinedfont;
+	CHARFORMAT2 underlinedfont = { 0 };
 	underlinedfont.cbSize = sizeof(CHARFORMAT);
 	underlinedfont.dwMask = CFM_UNDERLINE;
 	underlinedfont.dwEffects = CFM_UNDERLINE;
@@ -945,21 +944,21 @@ void txtUnderlined(HWND hWindow) {
 	SendMessage(hWindow, EM_SETCHARFORMAT, SCF_ALL, (LPARAM)&underlinedfont);
 }
 void txtItalic(HWND hWindow) {
-	CHARFORMAT Kursivfont;
+	CHARFORMAT Kursivfont = { 0 };
 	Kursivfont.cbSize = sizeof(CHARFORMAT);
 	Kursivfont.dwMask = CFM_ITALIC;
 	Kursivfont.dwEffects = CFM_ITALIC;
 	SendMessage(hWindow, EM_SETCHARFORMAT, SCF_ALL, (LPARAM)&Kursivfont);
 }
 void txtStrikeout(HWND hWindow) {
-	CHARFORMAT underlinedfont;
+	CHARFORMAT underlinedfont = { 0 };
 	underlinedfont.cbSize = sizeof(CHARFORMAT);
 	underlinedfont.dwMask = CFM_STRIKEOUT;
 	underlinedfont.dwEffects = CFM_STRIKEOUT;
 	SendMessage(hWindow, EM_SETCHARFORMAT, SCF_ALL, (LPARAM)&underlinedfont);
 }
 void Subscript(HWND hWindow) {
-	CHARFORMAT2 cf;
+	CHARFORMAT2 cf = { 0 };
 	cf.cbSize = sizeof(cf);
 	cf.dwMask = CFE_SUBSCRIPT;
 	cf.dwEffects = CFE_SUBSCRIPT;
@@ -967,23 +966,23 @@ void Subscript(HWND hWindow) {
 }
 
 void Superscript(HWND hWindow) {
-	CHARFORMAT2 cf;
+	CHARFORMAT2 cf = { 0 };
 	cf.cbSize = sizeof(cf);
 	cf.dwMask = CFM_SUPERSCRIPT;
 	cf.dwEffects = CFM_SUPERSCRIPT;
 	SendMessage(hWindow, EM_SETCHARFORMAT, SCF_ALL, (LPARAM)&cf);
 }
 void SetFont(HWND hWindow, const char* Font) {
-	CHARFORMAT2 cf;
+	CHARFORMAT2 cf = { 0 };
 	memset(&cf, 0, sizeof cf);
 	cf.cbSize = sizeof cf;
 	cf.dwMask = CFM_FACE;
-	wsprintf(cf.szFaceName, Font);
+	wsprintf(cf.szFaceName, (LPCWSTR)Font);
 	SendMessage(hWindow, EM_SETCHARFORMAT, SCF_ALL, (LPARAM)&cf);
 }
 
 void FontSize(HWND hWindow, int size) {
-	CHARFORMAT2 cf;
+	CHARFORMAT2 cf = { 0 };
 	memset(&cf, 0, sizeof cf);
 	cf.cbSize = sizeof cf;
 	cf.dwMask = CFM_SIZE;
@@ -991,7 +990,7 @@ void FontSize(HWND hWindow, int size) {
 	SendMessage(hWindow, EM_SETCHARFORMAT, SCF_ALL, (LPARAM)&cf);
 }
 void txtColor(HWND hWindow, COLORREF clr) {
-	CHARFORMAT cf;
+	CHARFORMAT cf = { 0 };
 	cf.cbSize = sizeof(cf);
 	cf.dwMask = CFM_COLOR;
 	cf.crTextColor = clr;
@@ -1000,7 +999,7 @@ void txtColor(HWND hWindow, COLORREF clr) {
 }
 
 void txtBackColor(HWND hWindow, COLORREF clr) {
-	CHARFORMAT2 cf;
+	CHARFORMAT2 cf = { 0 };
 	cf.cbSize = sizeof(cf);
 	cf.dwMask = CFM_BACKCOLOR;
 	cf.crBackColor = clr;
@@ -1010,11 +1009,27 @@ void txtBackColor(HWND hWindow, COLORREF clr) {
 
 DWORD CALLBACK EditStreamOutCallback(DWORD_PTR dwCookie, LPBYTE pbBuff, LONG cb, LONG* pcb)
 {
-	char** localbuffer = dwCookie;
+	char** localbuffer = (char**)dwCookie;
+	char* temppointer = 0;
 	if (rtfindex == 0)
-		localbuffer[0] = calloc(cb + 10, sizeof(char));
+	{
+		localbuffer[0] = calloc((size_t)cb + 10, sizeof(char));
+		if (localbuffer[0] == NULL)
+		{
+			CrashDumpFunction(61020, 1);
+			return FALSE;
+		}
+	}
 	else
-		localbuffer[0] = realloc(localbuffer, rtfindex + cb + 10);
+	{
+		temppointer = realloc(localbuffer, (size_t)rtfindex + cb + 10);
+		if (temppointer == NULL)
+		{
+			CrashDumpFunction(61021, 1);
+			return FALSE;
+		}
+		localbuffer[0] = temppointer;
+	}
 	int i = 0;
 	for (i = 0; i < cb; i++)
 	{
@@ -1042,7 +1057,10 @@ void SaveRichTextToFile(HWND hWnd, LPCWSTR filename)
 
 DWORD CALLBACK EditStreamInCallback(DWORD_PTR dwCookie, LPBYTE pbBuff, LONG cb, LONG* pcb)
 {
-	mcallbackinfo * mydata = dwCookie;
+	int dummy = 0;
+	if (cb == 0)
+		dummy = 1;
+	mcallbackinfo * mydata = (mcallbackinfo*)dwCookie;
 	HANDLE hFile = mydata->hFile;
 	OVERLAPPED overlapstruct = { 0 };
 	overlapstruct.Offset = mydata->offset;

@@ -1,7 +1,5 @@
 #include "framework.h"
 
-
-LOGFONT** Fontdata = { 0 };
 HWND buttondates[32] = { 0 };//stored hwnd of all 32 buttons for dates
 HWND DatesHwnd = { 0 };//dates hwnd
 int selecteddate = 0;//lowest 7 bits are day, then followed by 4 bits that are month, then from 11th to 23rd are the year(reserved for calcs), those be always 0 tho
@@ -59,7 +57,7 @@ LRESULT CALLBACK DatesProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam
 		ReleaseDC(hwnd, hdc);
 		for (TrustedIndex = 0; TrustedIndex < 31; TrustedIndex++)
 		{
-			buttonDCreationRoutine(cyChar, buttondates, hwnd, &dates[TrustedIndex]);
+			buttonDCreationRoutine(buttondates, hwnd, &dates[TrustedIndex]);
 		}
 
 		ColorsMaker(colorsdata);
@@ -260,7 +258,7 @@ LRESULT CALLBACK DatesProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam
 	return DefWindowProc(hwnd, message, wParam, lParam);
 }
 
-BOOL buttonDCreationRoutine(int cyChar, HWND* buttonarrayz, HWND hwnd, LPWSTR* Dates)
+BOOL buttonDCreationRoutine(HWND* buttonarrayz, HWND hwnd, LPWSTR* Dates)
 {
 	buttonrectd.left = 0;//he has 
 	
@@ -691,7 +689,7 @@ HWND ColorRemovalRoutine(int offsetpresent, int shiuze, OVERLAPPED fuckshit, HAN
 		char markdata[40] = { 0 };
 		int sizetoedit = shiuze - fuckshit.Offset;
 		char* filebuffer = calloc(sizetoedit, sizeof(char));
-		int returnval = 0;
+		DWORD returnval = 0;
 		if (ReadFile(hFile, filebuffer, sizetoedit, &returnval, &localoffset) == FALSE || filebuffer == NULL)
 		{
 			returnval = GetLastError();
@@ -1077,8 +1075,9 @@ INT_PTR CALLBACK FontBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 {
 	HWND hwndtemp = 0, hwndFont = 0, controlhwnd = 0;
 	int value = 0;
+	if (lParam == 0)
+		value = 1;
 	int static fontvalue = 0;
-	CHARFORMAT cf = { 0 };
 	switch (message)
 	{
 	case WM_INITDIALOG:
@@ -1116,9 +1115,9 @@ INT_PTR CALLBACK FontBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 		char tempstring22[200] = "Cf1,Underline,Invert,Dash,DashDot,DashDotDot,Dotted,Double,DoubleWave,Hairline,HeavyWave,LongDash,None,Thick,ThickDash,ThickDashDot,ThickDashDotDot,ThickDotted,ThickLongDash,Wave,Word";
 		for (int i = 0, m = 0; i < 21; i++)
 		{
-			char* stringtosend[30] = { 0 };
+			char stringtosend[30] = { 0 };
 			_memccpy(stringtosend, tempstring22 + m, ',', 30);
-			m += strlen(stringtosend);
+			m += (int)strlen(stringtosend);
 			((int)(DWORD)SendMessageA((controlhwnd), 0x014A, (WPARAM)(int)(i), (LPARAM)(LPCTSTR)(stringtosend)));
 		}
 		ReleaseDC(hwnd, hdc);
@@ -1300,7 +1299,7 @@ INT_PTR CALLBACK FontBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 			{
 			case EN_CHANGE:
 				value = GetDlgItemInt(FontBoxHwnd, IDC_EDITFONT, 0, FALSE);
-				SendMessage(TextBoxHwnd, EM_SETFONTSIZE, -(fontvalue - value), 0);
+				SendMessage(TextBoxHwnd, EM_SETFONTSIZE,  (WPARAM)(-(fontvalue - value)), 0);
 				fontvalue = value;
 			}
 			break;
@@ -1308,8 +1307,7 @@ INT_PTR CALLBACK FontBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 			switch (HIWORD(wParam))
 			{
 			case CBN_SELENDOK:
-				value = SendMessage(hwndtemp, CB_GETCURSEL, 0, 0);
-				//HFONT hFont = CreateFontIndirectA(Fontdata[value]);
+				value = (int)SendMessage(hwndtemp, CB_GETCURSEL, 0, 0);
 				cfrm.cbSize = sizeof(CHARFORMAT2);
 				cfrm.dwMask = CFM_FACE;
 				wmemcpy_s(cfrm.szFaceName, 32, fontlist[value], 32);
@@ -1321,7 +1319,7 @@ INT_PTR CALLBACK FontBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 			switch (HIWORD(wParam))
 			{
 			case CBN_SELENDOK:
-				value = SendMessage(hwndtemp, CB_GETCURSEL, 0, 0);
+				value = (int)SendMessage(hwndtemp, CB_GETCURSEL, 0, 0);
 				cfrm.cbSize = sizeof(CHARFORMAT2);
 				cfrm.dwMask = CFM_COLOR;
 				cfrm.crTextColor = colorsdata[value].RGBcolor;
@@ -1335,7 +1333,7 @@ INT_PTR CALLBACK FontBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 			switch (HIWORD(wParam))
 			{
 			case CBN_SELENDOK:
-				value = SendMessage(hwndtemp, CB_GETCURSEL, 0, 0);
+				value = (int)SendMessage(hwndtemp, CB_GETCURSEL, 0, 0);
 				cfrm.cbSize = sizeof(CHARFORMAT2);
 				cfrm.dwMask = CFM_BACKCOLOR;
 				cfrm.crBackColor = colorsdata[value].RGBcolor;
@@ -1348,7 +1346,7 @@ INT_PTR CALLBACK FontBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 			switch (HIWORD(wParam))
 			{
 			case CBN_SELENDOK:
-				value = SendMessage(hwndtemp, CB_GETCURSEL, 0, 0);//enumerate underline types
+				value = (int)SendMessage(hwndtemp, CB_GETCURSEL, 0, 0);//enumerate underline types
 				cfrm.cbSize = sizeof(CHARFORMAT2);
 				cfrm.dwMask = CFM_UNDERLINETYPE;
 				switch(value)
@@ -1427,10 +1425,10 @@ INT_PTR CALLBACK FontBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 			switch (HIWORD(wParam))
 			{
 			case CBN_SELENDOK:
-				value = SendMessage(hwndtemp, CB_GETCURSEL, 0, 0);
+				value = (int)SendMessage(hwndtemp, CB_GETCURSEL, 0, 0);
 				cfrm.cbSize = sizeof(CHARFORMAT2);
 				cfrm.dwMask = CFM_BACKCOLOR;
-				cfrm.bUnderlineColor = colorsdata[value].RGBcolor;//fix this read documentation about it
+				cfrm.bUnderlineColor = (BYTE)colorsdata[value].RGBcolor;//fix this read documentation about it
 				cfrm.dwEffects = 0;
 				SendMessage(TextBoxInput, EM_SETCHARFORMAT, SCF_SELECTION, (LPARAM)&cfrm);
 				SendMessage(TextBoxInput, EM_SETCHARFORMAT, 0, (LPARAM)&cfrm);
@@ -1447,14 +1445,17 @@ INT_PTR CALLBACK FontBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 
 int CALLBACK EnumFontFamilyProc(const LOGFONT* lpelfe, const void* lpntme, DWORD      FontType, LPARAM     lParam)
 {
+	short dummy = 0;
 	static int amount = 3;
+	if (lParam || FontType || lpntme)
+		dummy = 2;
 	static int index = 0;
 	char* tempppointer = 0;
 	WCHAR fontname[100] = { 0 };
-	//*fontname = lpelfe->lfFaceName;
 	wmemcpy_s(fontname, 100,lpelfe->lfFaceName, 32);
 	if (fontname[0] == '\0')
 		return 0;
+#pragma warning(disable:4047)
 	if (fontlist == NULL)
 	{
 		tempppointer = calloc(sizeof(WCHAR*), 2);
@@ -1464,13 +1465,6 @@ int CALLBACK EnumFontFamilyProc(const LOGFONT* lpelfe, const void* lpntme, DWORD
 			return FALSE;
 		}
 		fontlist = tempppointer;
-		tempppointer = calloc(sizeof(LOGFONT*), 2);
-		if (tempppointer == NULL)
-		{
-			CrashDumpFunction(31468, 1);
-			return FALSE;
-		}
-		Fontdata = tempppointer;
 	}
 	else
 	{
@@ -1481,19 +1475,11 @@ int CALLBACK EnumFontFamilyProc(const LOGFONT* lpelfe, const void* lpntme, DWORD
 			return FALSE;
 		}
 		fontlist = tempppointer;
-		tempppointer = realloc(Fontdata, sizeof(LOGFONT*) * amount);
-		if (tempppointer == NULL)
-		{
-			CrashDumpFunction(31488, 1);
-			return FALSE;
-		}
-		Fontdata = tempppointer;
 		
 	}
+#pragma warning(default:4047)
 	fontlist[index] = calloc(32, sizeof(WCHAR));
 	wmemcpy_s(fontlist[index], 100, fontname, 32);
-	Fontdata[index] = lpelfe;
-	//wmemcpy_s(Fontdata[index], sizeof(LOGFONT), lpelfe, sizeof(LOGFONT));
 	index++;
 	amount++;
 	fontamount = index+1;
@@ -1506,13 +1492,12 @@ int ColorsMaker(RGBData mycolors[])
 
 	COLORREF colorset[160] = { 0x000000, 0xFFFFFF, 0x0000FF, 0x00FF00, 0xFF0000, 0xFFFF00, 0x00FFFF, 0xFF00FF, 0xC0C0C0, 0x808080, 0x800000, 0x808000, 0x008000, 0x800080, 0x008080, 0x000080, 0x00008B, 0x2A2A8B, 0x2222B2, 0x3C14DC, 0x47FF63, 0x50FF7F, 0x5C5CCD, 0x80F0F0, 0x7A96E9, 0x72FA80, 0x7AFFA0, 0x4500FF, 0x8C00FF, 0xA500FF, 0xD700FF, 0x0B86B8, 0x520DAA, 0xAAEEE8, 0xB76BDB, 0x8CE0F0, 0x32CD9A, 0x2F6B55, 0x238E6B, 0x00FC7C, 0x00FF7F, 0x2E8B57, 0xAACD66, 0x371BC3, 0xB2AA20, 0x8B8B00, 0xFFFFE0, 0xD1CE00, 0xD0E040, 0xCC48D1, 0xEAEFAF, 0xD4DFFF, 0xE0D6B0, 0xA09E5F, 0xB4689E, 0xED6495, 0xBFFF00, 0x90E01E, 0xE4A0CD, 0xFA87CE, 0x970919, 0x8B0000, 0xCD0000, 0xE16941, 0xE2BE8A, 0x2D4B00, 0x8B3D48, 0xCD6A5A, 0xEE68B7, 0xDB7093, 0x8B008B, 0xD30094, 0xCC3299, 0xD3BA55, 0xD8BFD8, 0xDDA0DD, 0xEE82EE, 0xD670DA, 0x855C7D, 0x9300B0, 0x93DDF2, 0xB4F7F1, 0xF1F5F1, 0xD4E4FF, 0xB5E4C4, 0xD9FAE6, 0xB3F0E4, 0xA0E2D6, 0x8BADDC, 0x9B91C0, 0xD6E9FF, 0xE6F1F0, 0xF0F5F6, 0x8B4513, 0x2D52A0, 0x1E2691, 0x3F853F, 0x4604F4, 0xB8E4E8, 0xB48E2D, 0xB8D9B0, 0x8C4B9E, 0xB5E4B5, 0xDEADFF, 0xD9FFD1, 0xE1E4E4, 0xF0F5F0, 0xFAEBD7, 0xF5F5DC, 0xE4C4FF, 0xEBC3FF, 0xD3B5E7, 0xD1E6E6, 0xD6F8F5, 0xE6F5E0, 0xF5E3E0, 0xFAFAF0, 0x909070, 0x899799, 0xDEB0C4, 0xFAE6E6, 0xF0FFFA, 0xF0F8FF, 0xF8F8FF, 0xF0FFF0, 0xFFFFF0, 0xF0FFFF, 0xFAFAFF, 0x696969, 0xA9A9A9, 0xD3D3D3, 0xDCDCDC, 0xF5F5F5, 0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0A,0x0B,0x0C,0x0D,0x0E,0x0F};
 
-	char* temppointer = colornames;
 	int m = 0;
 	for (int i = 0; i < 150; i++)
 	{
 		_memccpy(mycolors[i].colorname, colornames+m, ',', 50);
 		mycolors[i].RGBcolor = colorset[i];
-		int g = strlen(mycolors[i].colorname);
+		int g = (int)strlen(mycolors[i].colorname);
 		mycolors[i].colorname[g-1] = 0;
 		m += g;
 	}

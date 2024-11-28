@@ -62,8 +62,8 @@ LRESULT CALLBACK MonthsProc(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK ButtonProcM(HWND, UINT, WPARAM, LPARAM);
 
 int DynamicScroll(int scrollamount, HWND hwnd);
-BOOL buttonMCreationRoutine(int cyChar, HWND* buttonarray, HWND hwnd, LPWSTR* Months);
-BOOL buttonDCreationRoutine(int cyChar, HWND* buttonarray, HWND hwnd, LPWSTR* Dates);
+BOOL buttonMCreationRoutine(HWND* buttonarray, HWND hwnd, LPWSTR* Months);
+BOOL buttonDCreationRoutine(HWND* buttonarray, HWND hwnd, LPWSTR* Dates);
 BOOL buttonMkCreationRoutine(HWND* markarray, HWND hwnd, LPWSTR* Marks);
 int PopChildMonth(HWND hwnd, int lastwindow);
 int PushChildMonth(HWND hwnd, int firstwindow);
