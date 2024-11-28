@@ -22,3 +22,5 @@ Features:
 - Use any year range that you desire.
 - Simple and intuitive UI design
 - Standalone.
+
+![Screenshot_117](https://github.com/user-attachments/assets/744193cc-2431-46ef-8373-79e6d1e43623)
