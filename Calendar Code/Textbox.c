@@ -1,16 +1,4 @@
 #include "framework.h"
-//fix the problem with \r and \n is the reason behind, i think, all failures and pitfals of the textbox
-/*
-1. Implement scrolling of textbox, separate h into "graphical h" and "logical h". Graphical ought not to use scrollvalue, but logical should.[X]
-2. On top of this make it put '\n' automatically when you reach xmaxchar[X]
-3. After all of this, get the whole code as much as possible accomodate to TenRules
-3a. Fix retard copy-pasting multi-line, single line, etc. Thhere is problem with it copy past "after" first line thus making whole thing inept. Then it goes on to fail copying totally.
-4. Make month boxes auto-center on current month upon starting
-5. Make a input box, to input desired date,month and year, or just to quick search a month.
-6. To the TopTen thing again
-7. Begin the UI phase
-8. end the tyranny of PchInputBuff, stop using it as a two-dimensional array. Rework the program in such a way it can be used as one dimensional.
-*/
 #define BUFSIZE 64000
 #define SHIFTED 0x8000 
 #define yMAXLINES 30
@@ -34,63 +22,11 @@ int TrustedIndex2 = 0;//stupid idiotic ugly index, TrustedIndex is a ghost of Tr
 BOOL pastingflag = FALSE;//used for calls to space function from the paste
 BOOL pasteunderselection = FALSE;//global flag for TextBox, turned on when program enters "Dragging loop" and off whenever you click left-click the textbox regardless if you dragged or not.
 BOOL SpaceAllocFlag = TRUE;//Used for communicating to space to allocate or not when using it recursively
-LRESULT TextBoxInputSbc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData);
 
-int DateTestBufferLoad(int* amountread, OVERLAPPED* overlapstruct, int* appendlocationindex, BOOL* datepresent);
-BOOL savingFunction(int* appendlocationindex, char * pchInputBuf, OVERLAPPED* overlapstruct, int* amountread, BOOL datepresent);
-BOOL LargeDataWrite(char * pchInputBuf, OVERLAPPED* overlapstruct, int* amountread, size_t strLength, HANDLE hFile, size_t* oldstringlength);
-BOOL SmallDataWrite(char * pchInputBuf, OVERLAPPED* overlapstruct, int* amountread, size_t strLength, HANDLE hFile, size_t* oldstringlength);
-BOOL DataWriteOver(char * pchInputBuf, OVERLAPPED* overlapstruct, int* amountread, size_t strLength, HANDLE hFile);
-
-BOOL alphnumBufCheck(BOOL* EmptyDataFlag, char * pchInputBuf[]);
-int newlinecounter(char* cStringP, int xlength);
-
-void CreateAHorizontalScrollBar(HWND hwndParent, int sbHeight);
-
-int WINAPI OnContextMenu(HWND hwnd, int x, int y);
-int APIENTRY DisplayContextMenu(HWND hwnd, POINT pt);
-
-int* GetLastChar(char* pchInputBuf[], int lastchar[]);
-int DeAllocPOINTx(size_t amount, POINT* buffer);
-BOOL DateWrite(int* appendindexlocation, char* dateset);
-char* DateTextShow(char* selecteddate1);
-
-void txtBold(HWND hWindow); //for bold-text
-void txtUnderlined(HWND hWindow); //for underlined-text
-void txtItalic(HWND hWindow); //for itaic-text
-void txtStrikeout(HWND hWindow); //for strikeout-text
-void Subscript(HWND hWindow); //for Sub-text
-void Superscript(HWND hWindow); //for Super-text
-void SetFont(HWND hWindow, const char* Font); //define the fontname in the ""
-void FontSize(HWND hWindow, int size); //set the fontsize 
-void txtColor(HWND hWindow, COLORREF clr); //set the text color
-void txtBackColor(HWND hWindow, COLORREF clr); //Set the textbackgroundcolor
-
-DWORD CALLBACK EditStreamOutCallback(DWORD_PTR dwCookie, LPBYTE pbBuff, LONG cb, LONG* pcb);
-void SaveRichTextToFile(HWND hWnd, LPCWSTR filename);
-DWORD CALLBACK EditStreamInCallback(DWORD_PTR dwCookie, LPBYTE pbBuff, LONG cb, LONG* pcb);
-void ReadRichTextFromFile(HWND hWnd, LPCWSTR filename);
 
 HWND TextBoxHwnd = NULL;
 BOOL datechangecheck = FALSE; //True if date has been changed, hence textfile needs to be read again! 
 BOOL ArrowLineScroll = FALSE;
-
-
-
-/*
-TODO: Selection, so one can cut/copy/paste replace etc.. aka mouse selection system + Copy-Pasting with it, and make it compatible with scrolling, and fix it to work.
-	- in standard non scroll value reality, it still failed to copy paste, first and/or last letter[X]
-	- implement scrollvalue and stress test, ensure it works.[X]
-	- Fix inline pasting[X]
-	- Fix Up and down, left and right arrows, not accounting for rules around '\n' and '\r', besides that, up arrow doesnt work at all lol[X]
-TODO: Reorganize the whole code so it doesnt look like shit, before adding mouse selection and stuff.
-	- use the tenrule as  the guide.
-TODO: Create MouseTextSelection(HWND hwnd, int * CaretY, int * CaretX, int cyChar) to implement input based drop-box for textbox
-TODO: reffer to the beginning of the code for further objectives
-1. create a custom brush(by creating a custom bitmap that is transparent)
-2. paste the bitmap to the polygon that represent according text selection
-3. REPRESENT POLYGON PROPERLY TO MAKE THING WORK.
-*/
 
 INT_PTR CALLBACK TextBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -106,6 +42,7 @@ INT_PTR CALLBACK TextBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 	case WM_INITDIALOG:
 		fagsdgadg = GetLastError();
 		TextBoxHwnd = (GetDlgItem(hwnd, TEXTBOXINPUT));//old one was named TEXTBOXINPUT in case something breaks bad
+		assert(TextBoxHwnd != NULL);
 		fagsdgadg = GetLastError();
 		flag667 = SetWindowSubclass(TextBoxHwnd, TextBoxInputSbc, 0, 0);
 		txtBackColor(TextBoxHwnd, textbackground);
@@ -124,6 +61,7 @@ All you need is to set the required color in control's device context and pass a
 			{
 			case EN_UPDATE:
 				TextHeapRemaining = pchinputbuffermemory - Edit_GetTextLength(TextBoxInput);
+				assert(buttonmarks != NULL);
 				SendMessageA(buttonmarks[2], DATEUPDATETICK, 0, 0);
 			default:
 				return TRUE;
@@ -155,19 +93,21 @@ LRESULT TextBoxInputSbc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT
 	switch (uMsg)
 	{
 	case IDDATECHANGE:
+		assert(amountread >= 0);
 		DateTestBufferLoad(&amountread, &overlapstruct, &appendlocationindex, &datepresentflag);
 		if (datepresentflag == TRUE)
 		{
 			hFile = CreateFileA(datasource, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 			if(RTForTXT == 1)
 			{
-				char* readbuffer = calloc((size_t)amountread + 1, sizeof(char));
+				char* readbuffer = SafeCalloc(  (size_t)amountread + 1,    sizeof(char));
 				overlapstruct.Offset = appendlocationindex;
 				if (FALSE == ReadFile(hFile, readbuffer, amountread, NULL, &overlapstruct))
 				{
 					CrashDumpFunction(3168, 0);
 					return FALSE;
 				}
+				assert(amountread >= 0);
 				SetWindowTextA(hWnd, readbuffer);
 			}
 			else if (RTForTXT == 0)
@@ -188,13 +128,16 @@ LRESULT TextBoxInputSbc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT
 			SetWindowTextA(hWnd, "");
 		break;	
 	case TEXTBOXCOLORCHANGE:
+		assert(TextBoxHwnd);
 		txtBackColor(TextBoxHwnd, textbackground);
 		COLORREF textboxcolor = RGB(GetRValue(~textbackground), GetGValue(~textbackground), GetBValue(~textbackground));
 		txtColor(TextBoxHwnd, textboxcolor);
 		break;
 	case WM_RBUTTONDOWN:
 		hPopMenu = LoadMenuA(GetModuleHandle(NULL), MAKEINTRESOURCEA(TXTPOPMENU));
+		assert(hPopMenu != NULL);
 		HMENU hTrackPopMenu = GetSubMenu(hPopMenu, 0);
+		assert(hTrackPopMenu != NULL);
 		POINT pt = { 0 };
 		pt.x = GET_X_LPARAM(lParam);
 		pt.y = GET_Y_LPARAM(lParam);
@@ -236,6 +179,7 @@ LRESULT TextBoxInputSbc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT
 			break;
 		case ID_CHANGEFONT:
 			thefont.hwndOwner = GetParent(hWnd);
+			assert(thefont.hwndOwner != NULL);
 			thefont.lpLogFont = (LPLOGFONTA)&lgf;
 			thefont.Flags = CF_EFFECTS;
 			thefont.lStructSize = sizeof(CHOOSEFONT);
@@ -282,26 +226,20 @@ LRESULT TextBoxInputSbc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT
 		status = GetLastError();
 		DestroyMenu(hPopMenu);
 		break;
-	//case WM_LBUTTONUP:
-		//SendMessage(TextBoxInput, EM_EXGETSEL, 0, &crc);
-		//Chrfm.cbSize = sizeof(CHARFORMAT);
-		//Chrfm.dwMask = CFM_ALL;
-		//SendMessage(TextBoxInput, EM_GETCHARFORMAT, SCF_SELECTION, &Chrfm);
-		//SetDlgItemInt(FontBoxHwnd, IDC_EDITFONT, Chrfm.yHeight/20, FALSE);
-		//break;
 	case WM_KEYDOWN:
 		switch (wParam)
 		{
 		case 0x53://"S" key
 			if (CtrlPressed)//save the text into textdata
 			{
+				assert(TextBoxInput);
 				int textlength = 0;
 				char* pchInputBuf = { 0 };
 				char** PPch = { 0 };
 					if(RTForTXT == 1)
 					{
 						textlength = GetWindowTextLengthA(TextBoxInput);
-						pchInputBuf = calloc((size_t)textlength + 1, sizeof(char));
+						pchInputBuf = SafeCalloc(  (size_t)textlength + 1,    sizeof(char));
 						if (pchInputBuf == NULL)
 							break;
 						GetWindowTextA((TextBoxInput), (pchInputBuf), (textlength + 1));
@@ -309,13 +247,14 @@ LRESULT TextBoxInputSbc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT
 					else if(RTForTXT == 0)
 					{
 						EDITSTREAM es = { 0 };
-						PPch = calloc(2, sizeof(char*));
+						PPch = SafeCalloc(  2,    sizeof(char*));
 						es.dwCookie = (DWORD_PTR)PPch;
 						es.pfnCallback = EditStreamOutCallback;
 						SendMessage(hWnd, EM_STREAMOUT, SF_RTF, (LPARAM)&es);
 						pchInputBuf = PPch[0];
 						rtfindex = 0;
 					}
+					assert(amountread >= 0);
 					DateTestBufferLoad(&amountread, &overlapstruct, &appendlocationindex, &datepresentflag);
 					savingFunction(&appendlocationindex, pchInputBuf, &overlapstruct, &amountread, datepresentflag);
 					free(pchInputBuf);
@@ -343,15 +282,17 @@ LRESULT TextBoxInputSbc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT
 
 int DateTestBufferLoad(int* amountread, OVERLAPPED* overlapstruct, int* appendlocationindex, BOOL* datepresent)
 {
+	assert(amountread != NULL);
+	assert(overlapstruct != NULL);
 	int xtoalloc = 0;
 	HANDLE hFile = { 0 };
 	hFile = CreateFileA(datasource, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS , FILE_ATTRIBUTE_NORMAL, NULL);
 	int amounttowrite = 0, oldlocindex = 0;
 	BOOL randomflag = FALSE;
-	char* selecteddate1 = calloc(25, sizeof(char));
+	char* selecteddate1 = SafeCalloc(  25,    sizeof(char));
 	selecteddate1 = DateTextShow(selecteddate1);
 	*amountread = GetFileSize(hFile, NULL);
-	char * readbuffer = calloc((size_t)(*amountread) + 1, sizeof(char));//MALLOCING HERE IS TEMP WORKAROUND TILL WE MAKE PROGRAM FULLY FUNCTIONAL, to run from stack.
+	char * readbuffer = SafeCalloc(  (size_t)(*amountread) + 1,    sizeof(char));//MALLOCING HERE IS TEMP WORKAROUND TILL WE MAKE PROGRAM FULLY FUNCTIONAL, to run from stack.
 	randomflag = ReadFile(hFile, readbuffer, *amountread, &((DWORD)amounttowrite), overlapstruct);//check if the data for a date is present
 	if (randomflag == 0 || readbuffer == NULL)
 	{
@@ -362,18 +303,18 @@ int DateTestBufferLoad(int* amountread, OVERLAPPED* overlapstruct, int* appendlo
 		return 0;
 	}
 	oldlocindex = *appendlocationindex;
-	for (int i = 0; i < *amountread && readbuffer[i] != '\0'; i++)//this loop will start reading when it reaches the appropriate data, and stop when it finishes reading the appropriate data from textdata
+	for (int i = 0; i < *amountread && readbuffer[i] != '\0' && i < MAXINT; i++)//this loop will start reading when it reaches the appropriate data, and stop when it finishes reading the appropriate data from textdata
 	{
 		*appendlocationindex = i;//this value is the beggining of the text following the date within dataread
 		if (readbuffer[i] == specialchar[0] && selecteddate1 != NULL)//specialchar[0] symbolizes posibility of beggining of the date, hence start checking for whole string afterwards below if it matches the selecteddate
 		{
-			for (int z = 1; (z + i <= *amountread) && (selecteddate1[z] == readbuffer[i + z]); z++)//date checking
+			for (int z = 1; (z + i <= *amountread) && (selecteddate1[z] == readbuffer[i + z]) && z < MAXINT; z++)//date checking
 			{
 				if (readbuffer[i + z] == specialchar[0] || readbuffer[i + z] == '\0')//we have reached second start without quiting the loop, ie. date is matching
 				{//here we will allocate all memory necessary. Loadingdataintobuffer will input actual data
 					*datepresent = TRUE;
 					*appendlocationindex = z + i + 1;//to the beginning of text
-					for (int k = *appendlocationindex; k<*amountread && readbuffer[k] != specialchar[0] && readbuffer[k] != '\0'; k++, xtoalloc++)
+					for (int k = *appendlocationindex; k<*amountread && readbuffer[k] != specialchar[0] && readbuffer[k] != '\0' && k < MAXINT; k++, xtoalloc++)
 					{
 						;
 					}
@@ -399,6 +340,8 @@ int DateTestBufferLoad(int* amountread, OVERLAPPED* overlapstruct, int* appendlo
 
 BOOL savingFunction(int* appendlocationindex, char * pchInputBuf, OVERLAPPED* overlapstruct, int* amountread, BOOL datepresent)
 {//we need to push all data forwards or backwards depending if we are ammending smaller sized new dataset or larger sized.
+	assert(pchInputBuf != NULL);
+	assert(appendlocationindex != NULL);
 	HANDLE hFile = { 0 };//errorint
 	BOOL EmptyDataFlag = TRUE;
 	size_t oldstringlength = *amountread;//amountread here is amount of data within the date selected
@@ -413,12 +356,7 @@ BOOL savingFunction(int* appendlocationindex, char * pchInputBuf, OVERLAPPED* ov
 	*amountread = GetFileSize(hFile, NULL);//amountread will be here used as total length
 	returnval = GetLastError();
 	//to do this get already existing data's size
-	char * tempcharbuf = calloc((size_t)*amountread+5,sizeof(char));
-	if (tempcharbuf == NULL)
-	{
-		CrashDumpFunction(247,0);
-		return FALSE;
-	}
+	char * tempcharbuf = SafeCalloc(  (size_t)*amountread+5,   sizeof(char));
 	//test read
 	if (FALSE == ReadFile(hFile, tempcharbuf, *amountread, NULL, overlapstruct))
 	{
@@ -443,13 +381,14 @@ BOOL savingFunction(int* appendlocationindex, char * pchInputBuf, OVERLAPPED* ov
 	size_t strLength = strnlen_s(pchInputBuf, pchinputbuffermemory);
 	if (datepresent == FALSE && strLength>0)
 	{//append date mark
-		char * selecteddate1 = calloc(sizeof(char), 25);
+		char * selecteddate1 = SafeCalloc(  sizeof(char),    25);
 		selecteddate1 = DateTextShow(selecteddate1);
 		if(ordereddatasave == 1)
 			DateWrite(appendlocationindex, selecteddate1);
 		else 
 		{
 			hFile = CreateFileA(datasource, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+			assert(hFile != INVALID_HANDLE_VALUE);
 			returnval = WriteFile(hFile, selecteddate1, 12, NULL, &ewreoverlapstruct);
 			returnval = GetLastError();
 			CloseHandle(hFile);
@@ -495,14 +434,12 @@ BOOL savingFunction(int* appendlocationindex, char * pchInputBuf, OVERLAPPED* ov
 
 BOOL LargeDataWrite(char* pchInputBuf, OVERLAPPED* overlapstruct, int* amountread, size_t strLength, HANDLE hFile, size_t* oldstringlength)
 {
+	assert(pchInputBuf != NULL);
+	assert(overlapstruct != NULL);
 	int shit = 0;
-	char* readbuffer = calloc(*amountread, sizeof(char));
-	char* readbuffer2 = calloc(*amountread + strLength + 1, sizeof(char));
-	if (readbuffer == NULL || readbuffer2 == NULL || pchInputBuf == NULL)
-	{
-		CrashDumpFunction(250,1);
-		return FALSE;
-	}
+	char* readbuffer = SafeCalloc(  *amountread,    sizeof(char));
+	char* readbuffer2 = SafeCalloc((size_t)(*amountread + strLength + 1), sizeof(char));
+	assert(pchInputBuf != NULL);
 	if (FALSE == ReadFile(hFile, readbuffer, *amountread - overlapstruct->Offset, NULL, overlapstruct))
 	{
 		free(readbuffer);
@@ -530,15 +467,13 @@ BOOL LargeDataWrite(char* pchInputBuf, OVERLAPPED* overlapstruct, int* amountrea
 
 BOOL SmallDataWrite(char * pchInputBuf, OVERLAPPED* overlapstruct, int* amountread, size_t strLength, HANDLE hFile, size_t* oldstringlength)
 {
+	assert(pchInputBuf != NULL);
+	assert(hFile != INVALID_HANDLE_VALUE);
 	int shit = 0;
-	char* readbuffer = calloc(*amountread+strLength, sizeof(char));
-	char* readbuffer2 = calloc(*amountread+strLength, sizeof(char));
+	char* readbuffer = SafeCalloc((size_t)(*amountread + strLength), sizeof(char));
+	char* readbuffer2 = SafeCalloc(  (size_t)(*amountread+strLength),    sizeof(char));
 	int offset = (int)(overlapstruct->Offset + *oldstringlength);//offset will skip reading the data of the given date date as it will be wholly wiped out and replaced
-	if (readbuffer == NULL || readbuffer2 == NULL || pchInputBuf == NULL)
-	{
-		CrashDumpFunction(253,0);
-		return FALSE;
-	}
+	assert(pchInputBuf != NULL);
 	if (FALSE == ReadFile(hFile, readbuffer, *amountread - overlapstruct->Offset, NULL, overlapstruct))
 	{
 		CloseHandle(hFile);
@@ -569,25 +504,12 @@ BOOL SmallDataWrite(char * pchInputBuf, OVERLAPPED* overlapstruct, int* amountre
 
 BOOL EmptyDataWrite(OVERLAPPED* overlapstruct, int* amountread, HANDLE hFile, size_t* oldstringlength, int * appendlocationindex)
 {
+	assert(hFile != INVALID_HANDLE_VALUE);
+	assert(oldstringlength != NULL);
 	int shit = 0;
 	overlapstruct->Offset = *appendlocationindex-12; //points to the beggining of the date-mark, so we can delete it as well, since all data is being deleted.
-	char* readbuffer = calloc(*amountread, sizeof(char));//for reading the txt file
-	char* readbuffer2 = calloc(*amountread, sizeof(char));//for new data to be written
-	if ((readbuffer == NULL) || (readbuffer2 == NULL))
-	{
-		if (readbuffer != NULL)
-		{
-			free(readbuffer);
-			readbuffer = NULL;
-		}
-		else if (readbuffer2 != NULL)
-		{
-			free(readbuffer2);
-			readbuffer2 = NULL;
-		}
-		CrashDumpFunction(254,0);
-		return 0;
-	}
+	char* readbuffer = SafeCalloc(  *amountread,    sizeof(char));//for reading the txt file
+	char* readbuffer2 = SafeCalloc(  *amountread,    sizeof(char));//for new data to be written
 	if (FALSE == ReadFile(hFile, readbuffer, *amountread - overlapstruct->Offset, NULL, overlapstruct))
 	{
 		CloseHandle(hFile);
@@ -610,12 +532,9 @@ BOOL EmptyDataWrite(OVERLAPPED* overlapstruct, int* amountread, HANDLE hFile, si
 
 BOOL DataWriteOver(char * pchInputBuf, OVERLAPPED* overlapstruct, int* amountread, size_t strLength, HANDLE hFile)
 {
-	char* readbuffer = calloc(*amountread, sizeof(char));
-	if (readbuffer == NULL)
-	{
-		CrashDumpFunction(260,1);
-		return 0;
-	}
+	assert(pchInputBuf);
+	assert(hFile != INVALID_HANDLE_VALUE);
+	char* readbuffer = SafeCalloc(  *amountread,    sizeof(char));
 	if (FALSE == ReadFile(hFile, readbuffer, *amountread - overlapstruct->Offset, NULL, overlapstruct))
 	{
 		CloseHandle(hFile);
@@ -632,187 +551,12 @@ BOOL DataWriteOver(char * pchInputBuf, OVERLAPPED* overlapstruct, int* amountrea
 	return TRUE;
 }
 
-BOOL alphnumBufCheck(BOOL * EmptyDataFlag, char * pchInputBuf[])
-{
-	size_t maxY = HeapSize(myHeap, 0, pchInputBuf);
-	if (maxY >= sizeof(char*))
-		maxY = maxY / sizeof(char*);
-	else maxY = 0;
-	if(pchInputBuf == NULL|| pchInputBuf[0] == NULL|| pchInputBuf[0][0] == 0)
-	{
-		if ((pchInputBuf != NULL && pchInputBuf[0] != NULL && pchInputBuf[0][0] !=  0) && pchInputBuf[0][0] >= 0 && isalnum(pchInputBuf[0][0]))
-		{
-			*EmptyDataFlag = FALSE;
-		}
-		*EmptyDataFlag = TRUE;
-	}
-	else
-	{
-		for (int z = 0, n = 0; z< (long long)maxY && (z < yAllocamount-1) && pchInputBuf[z] != NULL && pchInputBuf[z][n]>=0 && (FALSE == isalnum(pchInputBuf[z][n])); n++)
-		{
-			size_t maxX = 0;
-			maxX = HeapSize(myHeap, 0, pchInputBuf[z]);
-			BOOL zchangeflag = FALSE;
-			if((long long)n+1< (long long)maxX)
-			{
-				if (!(pchInputBuf[z]))
-				{
-					z++;
-					n = 0;
-					zchangeflag = TRUE;
-				}
-				if (pchInputBuf[z][n + 1] >= 0 && isalnum(pchInputBuf[z][n + 1]) && (z < yAllocamount-1))
-				{
-					*EmptyDataFlag = FALSE;
-					if (zchangeflag == TRUE)
-					{
-						if (pchInputBuf[z][n + 1] >= 0 && isalnum(pchInputBuf[z][n]))
-							*EmptyDataFlag = FALSE;
-						zchangeflag = FALSE;
-					}
-				}
-			}
-		}
-	}
-	return TRUE;
-}
-
-//counts amount of newline linux version and/or windows newlines
-//if a newline is at the end of data
-//xlength must represent, amount of data in bytes, excluding the terminating null.
-int newlinecounter(char * cStringP,int xlength)
-{
-	int a = 0;//this variable will count up as it finds newlines
-	if (cStringP[xlength - 1] == '\n')//if the last character before terminating null is the newline, remove it, and replace it with a null. This is for sake of making the algorithm less complicated.
-	{
-		a--;//this will deduce that null so that in loop below, it will exclude it from the sum.
-		cStringP[xlength - 1] = '\0';
-		if (xlength > 1 && cStringP[xlength - 2] == '\r')//in case its a windows newline
-		{
-			cStringP[xlength - 2] = '\0';
-		}
-	}
-	//loop for calculating newlines
-	for (int z = 0; z <= xlength; z++)
-	{
-		if (cStringP[z] == '\n')
-		{
-			a++;
-		}
-		else if (cStringP[z] == '\r')
-		{
-			a++;
-			if ((z + 1) <= xlength && cStringP[z + 1] == '\n')
-				z++;//skip the /r/n windows combo when it appears
-		}
-	}
-	return a;
-}
-
-int WINAPI OnContextMenu(HWND hwnd, int x, int y)
-{
-	RECT rc;                    // client area of window 
-	POINT pt = { x, y };        // location of mouse click 
-
-	// Get the bounding rectangle of the client area. 
-
-	GetClientRect(hwnd, &rc);
-
-	// Convert the mouse position to client coordinates. 
-
-	ScreenToClient(hwnd, &pt);
-
-	// If the position is in the client area, display a  
-	// shortcut menu. 
-
-	if (PtInRect(&rc, pt))
-	{
-		ClientToScreen(hwnd, &pt);
-		return DisplayContextMenu(hwnd, pt);
-	}
-
-	// Return FALSE if no menu is displayed. 
-	CrashDumpFunction(371,0);
-	return FALSE;
-}
-
-int APIENTRY DisplayContextMenu(HWND hwnd, POINT pt)
-{
-	HMENU hmenu;            // top-level menu 
-	HMENU hmenuTrackPopup;  // shortcut menu 
-
-	// Load the menu resource. 
-
-	if ((hmenu = LoadMenu(GetModuleHandle(NULL), MAKEINTRESOURCE(TXTPOPMENU))) == NULL)
-	{
-		CrashDumpFunction(354,0);
-		return 0;
-	}
-
-	// TrackPopupMenu cannot display the menu bar so get 
-	// a handle to the first shortcut menu. 
-
-	hmenuTrackPopup = GetSubMenu(hmenu, 0);
-
-	// Display the shortcut menu. Track the right mouse 
-	// button. 
-	int returnval = 0;
-	returnval = TrackPopupMenu(hmenuTrackPopup,
-		TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD,
-		pt.x, pt.y, 0, hwnd, NULL);
-
-	// Destroy the menu. 
-
-	DestroyMenu(hmenu);
-	return returnval;
-}
-
-//lastchar indexes will be allocated relative to the y position, the number itself will point to the exact array position of last valid non-null character
-int * GetLastChar(char* pchInputBuf[], int lastchar[])
-{
-	size_t maxX = 0;
-	if (pchInputBuf == NULL || lastchar == NULL)
-	{
-		CrashDumpFunction(401,1);
-		return lastchar;
-	}
-	size_t yMax = 0;
-	yMax = HeapSize(myHeap, 0, pchInputBuf);
-	if (yMax >= sizeof(char*))
-		yMax /= sizeof(char*);
-	else yMax = 0;
-	if(yAllocamount && pchInputBuf && lastchar)
-	{
-		for (int f = 0; f < yAllocamount-1 && f< (long long)yMax && (pchInputBuf[f]!=NULL) && (pchInputBuf[f][0] != '\0'); f++)
-		{
-			maxX = HeapSize(myHeap, 0, pchInputBuf[f]);
-			for (int r = 1; r< (long long)maxX && pchInputBuf[f][r-1] != '\0'; r++)
-			{
-				lastchar[f] = r;//its inclusive
-			}
-		}
-	}
-
-	return lastchar;
-}
-
-int DeAllocPOINTx(size_t amount, POINT * buffer)
-{
-	buffer = calloc(amount, sizeof(POINT));
-	if (!buffer)
-	{
-		CrashDumpFunction(356,0);
-		return -1;
-	}
-	buffer->x = 0;
-	buffer->y = 0;
-	return 1;
-}
-
 //When there is no date uploaded to datafile, this positions it properly and uploads it accordingly
 //If the function returns false, simply input the date at the end.
 BOOL DateWrite(int * appendindexlocation, char * dateset)
 {
+	assert(dateset != NULL);
+	assert(appendindexlocation != NULL);
 	HANDLE hFile = { 0 };
 	int filesize = 0;
 	DWORD byteswritten = 0;
@@ -821,12 +565,7 @@ BOOL DateWrite(int * appendindexlocation, char * dateset)
 	
 	hFile = CreateFileA(datasource, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	filesize = GetFileSize(hFile, NULL);
-	readbuffer = calloc((long long)filesize+20, sizeof(char));//20 for dateset
-	if (readbuffer == NULL)
-	{
-		CrashDumpFunction(387,0);
-		return FALSE;
-	}
+	readbuffer = SafeCalloc(  (long long)filesize+20,    sizeof(char));//20 for dateset
 
 	if (FALSE == ReadFile(hFile, readbuffer, filesize, NULL, &Overlapped))
 	{
@@ -843,7 +582,7 @@ BOOL DateWrite(int * appendindexlocation, char * dateset)
 	}
 	//now push all data forward and paste the dateset
 	int datelength = (int)strlen(dateset);
-	char* readbuffer2 = calloc(filesize, sizeof(char));
+	char* readbuffer2 = SafeCalloc(  filesize,    sizeof(char));
 	_memccpy(readbuffer2, readbuffer, 0, filesize);
 	if ((readbuffer2 + *appendindexlocation) == 0)
 	{
@@ -860,44 +599,13 @@ BOOL DateWrite(int * appendindexlocation, char * dateset)
 	return TRUE;
 }
 
-// Description:
-//   Creates a horizontal scroll bar along the bottom of the parent 
-//   window's area.
-// Parameters:
-//   hwndParent - handle to the parent window.
-//   sbHeight - height, in pixels, of the scroll bar.
-// Returns:
-//   The handle to the scroll bar.
-void CreateAHorizontalScrollBar(HWND hwndParent, int sbHeight)
-{
-	RECT rect;
-
-	// Get the dimensions of the parent window's client area;
-	if (!GetClientRect(hwndParent, &rect))
-		return;
-
-	// Create the scroll bar.
-	(CreateWindowEx(
-		0,                      // no extended styles 
-		L"SCROLLBAR",           // scroll bar control class 
-		(PTSTR)NULL,           // no window text 
-		WS_CHILD | WS_VISIBLE   // window styles  
-		| SBS_HORZ,         // horizontal scroll bar style 
-		rect.left,              // horizontal position 
-		rect.bottom - sbHeight, // vertical position 
-		rect.right,             // width of the scroll bar 
-		sbHeight,               // height of the scroll bar
-		hwndParent,             // handle to main window 
-		(HMENU)NULL,           // no menu 
-		GetModuleHandle(NULL),                // instance owning this window 
-		(PVOID)NULL            // pointer not needed 
-	));
-}
 char * DateTextShow(char * selecteddate1)
 {
+	assert(selecteddate1 != NULL);
 	//everything below happens when you click a date, 12120 is a flag for this mechanism: You click a date and SETFOCUS is sent from the dates.c under the context of Datesproc during message "LM_BUTTONDOWN", in that message switch, there is a section where it sends WM_SETOFUCS to here with LOWORD(lParam) se to 12120. All this is done so text could be shown in textbox upon clicking a date.
-					//In this section particulary you have "selecteddate1" buffer being loaded up for sake of later comparison with the read data from datatext, when exact match string of selectedate, according to its dating format, after this if statemant, the data is read.
-					//Also note wparam and lparam also both used to store and the decompile year/day/month values. when flag is 12120(?)
+	//In this section particulary you have "selecteddate1" buffer being loaded up for sake of later comparison with the read data from datatext, when exact match string of selectedate, according to its dating format, after this if statemant, the data is read.
+	//Also note wparam and lparam also both used to store and the decompile year/day/month values. when flag is 12120(?)
+	assert(selecteddate >= 0);
 	int dateyear = selecteddate >> 11;
 	int datemonthindex = (selecteddate & 0x780) >> 7;
 	int datedayindex = (selecteddate & 0x7F);
@@ -910,86 +618,14 @@ char * DateTextShow(char * selecteddate1)
 		sprintf_s(selecteddate1, 20, "*%d:%d :%d*", datedayindex, datemonthindex, dateyear);
 	else
 		sprintf_s(selecteddate1, 20, "*%d:%d:%d*", datedayindex, datemonthindex, dateyear);
-	/*StringCbCatExA((LPSTR)selecteddate1, 20, "*00:00:0000*", NULL, NULL, 0);
-	_itoa_s(datedayindex, selecteddate1 + 1, 3, 10);
-	if (datedayindex < 10)
-		selecteddate1[2] = ' ';
-	_itoa_s(datemonthindex, selecteddate1 + 4, 3, 10);
-	if (datemonthindex < 10)
-		selecteddate1[5] = ' ';
-	_itoa_s(dateyear, selecteddate1 + 7, 5, 10);
-	selecteddate1[3] = ':';
-	selecteddate1[6] = ':';
-	selecteddate1[11] = specialchar[0];
-	selecteddate1[12] = 0;*/
 	return selecteddate1;
 
 }
 //richedit quick functions 
 
-void txtBold(HWND hWindow) {
-	CHARFORMAT boldfont = { 0 };
-	boldfont.cbSize = sizeof(CHARFORMAT);
-	boldfont.dwMask = CFM_BOLD;
-	boldfont.dwEffects = CFE_BOLD;
-	SendMessage(hWindow, EM_SETCHARFORMAT, SCF_ALL, (LPARAM)&boldfont);
-}
 
-void txtUnderlined(HWND hWindow) {
-	CHARFORMAT2 underlinedfont = { 0 };
-	underlinedfont.cbSize = sizeof(CHARFORMAT);
-	underlinedfont.dwMask = CFM_UNDERLINE;
-	underlinedfont.dwEffects = CFM_UNDERLINE;
-
-	SendMessage(hWindow, EM_SETCHARFORMAT, SCF_ALL, (LPARAM)&underlinedfont);
-}
-void txtItalic(HWND hWindow) {
-	CHARFORMAT Kursivfont = { 0 };
-	Kursivfont.cbSize = sizeof(CHARFORMAT);
-	Kursivfont.dwMask = CFM_ITALIC;
-	Kursivfont.dwEffects = CFM_ITALIC;
-	SendMessage(hWindow, EM_SETCHARFORMAT, SCF_ALL, (LPARAM)&Kursivfont);
-}
-void txtStrikeout(HWND hWindow) {
-	CHARFORMAT underlinedfont = { 0 };
-	underlinedfont.cbSize = sizeof(CHARFORMAT);
-	underlinedfont.dwMask = CFM_STRIKEOUT;
-	underlinedfont.dwEffects = CFM_STRIKEOUT;
-	SendMessage(hWindow, EM_SETCHARFORMAT, SCF_ALL, (LPARAM)&underlinedfont);
-}
-void Subscript(HWND hWindow) {
-	CHARFORMAT2 cf = { 0 };
-	cf.cbSize = sizeof(cf);
-	cf.dwMask = CFE_SUBSCRIPT;
-	cf.dwEffects = CFE_SUBSCRIPT;
-	SendMessage(hWindow, EM_SETCHARFORMAT, SCF_ALL, (LPARAM)&cf);
-}
-
-void Superscript(HWND hWindow) {
-	CHARFORMAT2 cf = { 0 };
-	cf.cbSize = sizeof(cf);
-	cf.dwMask = CFM_SUPERSCRIPT;
-	cf.dwEffects = CFM_SUPERSCRIPT;
-	SendMessage(hWindow, EM_SETCHARFORMAT, SCF_ALL, (LPARAM)&cf);
-}
-void SetFont(HWND hWindow, const char* Font) {
-	CHARFORMAT2 cf = { 0 };
-	memset(&cf, 0, sizeof cf);
-	cf.cbSize = sizeof cf;
-	cf.dwMask = CFM_FACE;
-	wsprintf(cf.szFaceName, (LPCWSTR)Font);
-	SendMessage(hWindow, EM_SETCHARFORMAT, SCF_ALL, (LPARAM)&cf);
-}
-
-void FontSize(HWND hWindow, int size) {
-	CHARFORMAT2 cf = { 0 };
-	memset(&cf, 0, sizeof cf);
-	cf.cbSize = sizeof cf;
-	cf.dwMask = CFM_SIZE;
-	cf.yHeight = size * 20;
-	SendMessage(hWindow, EM_SETCHARFORMAT, SCF_ALL, (LPARAM)&cf);
-}
 void txtColor(HWND hWindow, COLORREF clr) {
+	assert(hWindow != NULL);
 	CHARFORMAT cf = { 0 };
 	cf.cbSize = sizeof(cf);
 	cf.dwMask = CFM_COLOR;
@@ -999,6 +635,7 @@ void txtColor(HWND hWindow, COLORREF clr) {
 }
 
 void txtBackColor(HWND hWindow, COLORREF clr) {
+	assert(hWindow != NULL);
 	CHARFORMAT2 cf = { 0 };
 	cf.cbSize = sizeof(cf);
 	cf.dwMask = CFM_BACKCOLOR;
@@ -1010,15 +647,11 @@ void txtBackColor(HWND hWindow, COLORREF clr) {
 DWORD CALLBACK EditStreamOutCallback(DWORD_PTR dwCookie, LPBYTE pbBuff, LONG cb, LONG* pcb)
 {
 	char** localbuffer = (char**)dwCookie;
+	assert(localbuffer != NULL);
 	char* temppointer = 0;
 	if (rtfindex == 0)
 	{
-		localbuffer[0] = calloc((size_t)cb + 10, sizeof(char));
-		if (localbuffer[0] == NULL)
-		{
-			CrashDumpFunction(61020, 1);
-			return FALSE;
-		}
+		localbuffer[0] = SafeCalloc( (size_t)cb + 10,   sizeof(char));
 	}
 	else
 	{
@@ -1031,7 +664,8 @@ DWORD CALLBACK EditStreamOutCallback(DWORD_PTR dwCookie, LPBYTE pbBuff, LONG cb,
 		localbuffer[0] = temppointer;
 	}
 	int i = 0;
-	for (i = 0; i < cb; i++)
+	assert(rtfindex >= 0);
+	for (i = 0; i < cb && i < MAXINT; i++)
 	{
 		localbuffer[0][rtfindex + i] = pbBuff[i];
 	}
@@ -1040,28 +674,15 @@ DWORD CALLBACK EditStreamOutCallback(DWORD_PTR dwCookie, LPBYTE pbBuff, LONG cb,
 	return 0;
 }
 
-void SaveRichTextToFile(HWND hWnd, LPCWSTR filename)
-{
-	HANDLE hFile = CreateFile(filename, GENERIC_WRITE, 0, NULL,
-		CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-	EDITSTREAM es = { 0 };
-	es.dwCookie = (DWORD_PTR)hFile;
-	es.pfnCallback = EditStreamOutCallback;
-	SendMessage(hWnd, EM_STREAMOUT, SF_RTF, (LPARAM)&es);
-	CloseHandle(hFile);
-	if (es.dwError != 0)
-	{
-		//handle errors
-	}
-}
-
 DWORD CALLBACK EditStreamInCallback(DWORD_PTR dwCookie, LPBYTE pbBuff, LONG cb, LONG* pcb)
 {
 	int dummy = 0;
 	if (cb == 0)
 		dummy = 1;
 	mcallbackinfo * mydata = (mcallbackinfo*)dwCookie;
+	assert(mydata != NULL);
 	HANDLE hFile = mydata->hFile;
+	assert(hFile != INVALID_HANDLE_VALUE);
 	OVERLAPPED overlapstruct = { 0 };
 	overlapstruct.Offset = mydata->offset;
 
@@ -1074,24 +695,5 @@ DWORD CALLBACK EditStreamInCallback(DWORD_PTR dwCookie, LPBYTE pbBuff, LONG cb, 
 	}
 	*pcb = NumberOfBytesRead;
 	return 0;
-}
-
-void ReadRichTextFromFile(HWND hWnd, LPCWSTR filename)
-{
-	HANDLE hFile = CreateFile(filename, GENERIC_READ, 0, NULL,
-		OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-	if (hFile == INVALID_HANDLE_VALUE)
-	{
-		//handle errors
-	}
-	EDITSTREAM es = { 0 };
-	es.dwCookie = (DWORD_PTR)hFile;
-	es.pfnCallback = EditStreamInCallback;
-	SendMessage(hWnd, EM_STREAMIN, SF_RTF, (LPARAM)&es);
-	CloseHandle(hFile);
-	if (es.dwError != 0)
-	{
-		//handle errors
-	}
 }
 

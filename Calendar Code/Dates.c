@@ -1,7 +1,7 @@
 #include "framework.h"
 
 HWND buttondates[32] = { 0 };//stored hwnd of all 32 buttons for dates
-HWND DatesHwnd = { 0 };//dates hwnd
+HWND DatesHwnd = { 0 };//day dates window hwnd
 int selecteddate = 0;//lowest 7 bits are day, then followed by 4 bits that are month, then from 11th to 23rd are the year(reserved for calcs), those be always 0 tho
 int datemonthindex = 0; //used for calculating selecteddate
 int datindice = 0;//used for date calcuations
@@ -10,25 +10,10 @@ BOOL markflagmonth = TRUE; //when true it will do a markcheck, otherwise it wont
 static HFONT datefont = NULL;//used to store font
 COLORREF datesbackground = RGB(0, 255, 255);
 COLORREF datesbuttoncolor = RGB(55, 60, 120);
-HWND FontBoxHwnd = { 0 };
-RGBData colorsdata[170] = { 0 };
+HWND FontBoxHwnd = { 0 };//FontBox window hwnd
+RGBData colorsdata[170] = { 0 };//colorsdata hwnd
 
-LRESULT CALLBACK ButtonProcD(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
-INT_PTR CALLBACK FontBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
-int CALLBACK EnumFontFamilyProc(const LOGFONT* lpelfe, const void* lpntme, DWORD      FontType, LPARAM     lParam);
 
-HWND datetickfunction(int datetick, char* filebuffer, int * i);
-BOOL DateColoring(int colorid, HWND refferentdate, HDC hdc, char* filebuffer, int* i);
-BOOL DateShaping(int shapeid, char* filebuffer, int* i, int datetick);
-HWND ColorRemovalRoutine(int offsetpresent, int shiuze, OVERLAPPED fuckshit, HANDLE hFile, HWND refferentdate, int datetick);
-HWND MarkRemoveRoutine(int offsetpresent, int shiuze, OVERLAPPED fuckshit, HANDLE hFile, int datetick, HWND refferentdate);
-char* marksbuffermodifier(int shapeid, int colorid, char* filebuffer, int datetick, int* i, int presentshapeval, HWND refferentdate, HDC hdc, int presentcolorval);
-bool markspaint(BOOL* dateflags);
-bool marksmonthcheck(char* marksbuffer, int filesize);
-char* tempbuffermarkchecker(BOOL* flag69, int* checker, char* tempbuffer2, char* TempBuffer, BOOL lswitch, int* day, BOOL* mydflags, int* i, int month, int* indexplace, int* colorvalue, int* shapevalue);
-HWND colorshapepresent(HWND refferentbutton, BOOL* mydflags, int shape, int color, int day);
-char* dataovverridingsmarks(char* tempbuffer2, char* TempBuffer, BOOL* flag69, int day, int* indexplace, int* colorvalue, int* shapevalue, int* checker, int* i);
-int ColorsMaker(RGBData mycolors[]);
 
 
 /*32 child button windows */
@@ -59,7 +44,7 @@ LRESULT CALLBACK DatesProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam
 		{
 			buttonDCreationRoutine(buttondates, hwnd, &dates[TrustedIndex]);
 		}
-
+		assert(buttondates != NULL);
 		ColorsMaker(colorsdata);
 		CreateDialog(GetModuleHandle(NULL), MAKEINTRESOURCE(FONTBOXDIALOG), hwnd, FontBoxProc);
 
@@ -69,6 +54,8 @@ LRESULT CALLBACK DatesProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam
 		cxClient = LOWORD(lParam);
 		cyClient = HIWORD(lParam);
 
+		assert(buttondates[30] != NULL);
+		assert(buttondates[27] != NULL);
 		RECT temprect = { 0 };
 		POINT fontupleft = { 0 };
 		POINT fontdownright = { 0 };
@@ -112,6 +99,7 @@ LRESULT CALLBACK DatesProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam
 			datemonthindex = 12;
 		selecteddate = (selecteddate & 0x7F) + (((selecteddate) >> 11) << 11);//clear the month space first before update
 		selecteddate += (datemonthindex) << 7;
+		assert(buttondates[0] != NULL);
 		SendMessage(buttondates[0], WM_COMMAND, 1488, 888);
 		InvalidateRect(hwnd, NULL, TRUE);
 		return 0;
@@ -161,15 +149,12 @@ LRESULT CALLBACK DatesProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam
 			CloseHandle(hFile);
 			return TRUE;
 		}
-		char* filebuffer = calloc(40, sizeof(char));
-		if (filebuffer == NULL)
-		{
-			CrashDumpFunction(47, 0);
-			return 0;
-		}
+		char* filebuffer = { 0 };
+		filebuffer = SafeCalloc(40,  sizeof(char));
 		int i = 0;
 		filebuffer[i++] = '|';
 		refferentdate = datetickfunction(datetick, filebuffer, &i);
+		assert(refferentdate != NULL);
 		hdc = GetDC(refferentdate);
 		filebuffer[i++] = specialchar[0];
 		filebuffer = marksbuffermodifier(shapeid, (int)colorid, filebuffer, datetick, &i, presentshapeval, refferentdate, hdc, presentcolorval);
@@ -184,6 +169,7 @@ LRESULT CALLBACK DatesProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam
 		RECT WindowSize = { 0,0,0,0 };
 		GetClientRect(hwnd, &WindowSize);
 		HBRUSH sbrush = CreateSolidBrush(datesbackground);
+		assert(sbrush != INVALID_HANDLE_VALUE);
 		FillRect(hdc, &WindowSize, sbrush);
 		DeleteObject(sbrush);
 		int currentmonth = datemonthindex;
@@ -245,6 +231,7 @@ LRESULT CALLBACK DatesProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam
 			}
 			datindice += 3;
 		}
+		assert(FontBoxHwnd != NULL);
 		MoveWindow(FontBoxHwnd, fontrect.left, fontrect.top, fontrect.right - fontrect.left, fontrect.bottom - fontrect.top, TRUE);
 		UpdateWindow(FontBoxHwnd);
 		ShowWindow(FontBoxHwnd, SW_SHOW);
@@ -261,7 +248,7 @@ LRESULT CALLBACK DatesProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam
 BOOL buttonDCreationRoutine(HWND* buttonarrayz, HWND hwnd, LPWSTR* Dates)
 {
 	buttonrectd.left = 0;//he has 
-	
+	assert(buttonarrayz[TrustedIndex] != NULL);
 	//needs to die from thats why we put the values  here
 	buttonrectd.top = DatesRect.top;
 	buttonrectd.right = DatesRect.right / 20;
@@ -281,6 +268,7 @@ BOOL buttonDCreationRoutine(HWND* buttonarrayz, HWND hwnd, LPWSTR* Dates)
 
 HWND CreateButtonD(LPWSTR szString, HWND hwnd, int index)
 {
+	assert(hwnd != NULL);
 	static BOOL firsttime = TRUE;
 	int static lindex = 1;
 	WNDCLASSEX buttonclassd =
@@ -311,6 +299,7 @@ HWND CreateButtonD(LPWSTR szString, HWND hwnd, int index)
 	//positioning here doesnt matter, we will do it right at WM_MOVE.
 
 	hwndButtond = CreateWindow(TEXT("Button class d"), szString, WS_VISIBLE | WS_CHILD | WS_TABSTOP | BS_DEFPUSHBUTTON | BS_TEXT | BS_CENTER, buttonrectd.left+(index-linefact*7)* buttonrectd.right*2, linefact* buttonrectd.bottom*2+ buttonrectd.bottom/2, buttonrectd.right, buttonrectd.bottom, hwnd, NULL, (HINSTANCE)GetWindowLongPtr(hwnd, GWLP_HINSTANCE), NULL);
+	assert(hwndButtond != NULL);
 	Button_Enable(hwndButtond, TRUE);
 	Button_SetText(hwndButtond, szString);
 	SetWindowLongPtr(hwndButtond, GWLP_USERDATA, lindex);
@@ -347,6 +336,7 @@ LRESULT CALLBACK ButtonProcD(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 			RECT temprect9 = { 0 };
 			GetClientRect(hwnd, &temprect9);
 			datefont = CreateFontA(0, temprect9.bottom / 3, 0, 0, FW_REGULAR, FALSE, TRUE, FALSE, ANSI_CHARSET, OUT_CHARACTER_PRECIS, CLIP_TT_ALWAYS, PROOF_QUALITY, FIXED_PITCH, NULL);
+			assert(datefont != NULL);
 			Firstbuttonflag = FALSE;
 		}
 		return 0;
@@ -358,7 +348,9 @@ LRESULT CALLBACK ButtonProcD(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 		int monthvalue = 0;
 		GetClientRect(hwnd, &localrect);
 		hdc = GetDC(hwnd);
+		assert(hwnd != NULL);
 		hBrush = CreateSolidBrush(RGB(0, 0, 0));
+		assert(hBrush != NULL);
 		FillRect(hdc, &localrect, hBrush);
 		ReleaseDC(hwnd, hdc);
 		DeleteObject(hBrush);
@@ -405,20 +397,22 @@ LRESULT CALLBACK ButtonProcD(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 		if (buttondates[30] == hwnd || buttondates[26] == hwnd)
 		{
 			SendMessage(GetParent(hwnd), WM_SIZE, 0, 0);
-		}
+		} 
 		COLORREF inverttextbclr = RGB(GetRValue(~datesbuttoncolor), GetGValue(~datesbuttoncolor), GetBValue(~datesbuttoncolor));
 		OVERLAPPED overlapstruct = { 0 };
 		overlapstruct.Offset = max(0, ((datemonthindex * 150) - 150))+24+datindice;
 		hBrush = CreateSolidBrush(datesbuttoncolor);
+		assert(hBrush != NULL);
 		FillRect(hdc, &ps.rcPaint, hBrush);
 		char myfilename[1000] = { 0 };
 		int myoffset = GetModuleFileNameA(NULL, myfilename, 1000);
-		for (int f = myoffset; f > 0 && myfilename[f] != '\\'; f--)
+		for (int f = myoffset; f > 0 && myfilename[f] != '\\' && f < 1000; f--)
 		{
 			myfilename[f] = '\0';
 			myoffset = f;
 		}
 		char tempstring[1000] = { 0 };
+		assert(theworkingdirectory != NULL);
 		sprintf_s(tempstring, 1000, "%sLocaldata.txt", theworkingdirectory);
 		hFile = CreateFileA(tempstring, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 		if (FALSE == ReadFile(hFile, charbuffer, 3, NULL, &overlapstruct))
@@ -451,8 +445,9 @@ LRESULT CALLBACK ButtonProcD(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 		TextOutA(hdc, ps.rcPaint.right / 7, ps.rcPaint.bottom / 3, charbuffer, 3);
 		sprintf_s(tempstring, 1000, "%sMarksData.txt", theworkingdirectory);
 		hFile = CreateFileA(tempstring, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);;
+		assert(hFile != INVALID_HANDLE_VALUE);
 		int filesize = GetFileSize(hFile, NULL);
-		char* marksbuffer = calloc(filesize, sizeof(char));
+		char* marksbuffer = SafeCalloc( filesize,   sizeof(char));
 		overlapstruct.Offset = 0;
 		if (FALSE == ReadFile(hFile, marksbuffer, filesize, NULL, &overlapstruct))
 			markflagmonth = FALSE;
@@ -472,6 +467,7 @@ LRESULT CALLBACK ButtonProcD(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 		return 0;
 	case MARK_CHECK_SIGNAL:
 		hdc = GetDC(hwnd);
+		assert(hdc != NULL);
 		int color = 0, shape = 0;
 		shape = (int)wParam;
 		color = (int)lParam;
@@ -494,6 +490,7 @@ LRESULT CALLBACK ButtonProcD(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 			SetStretchBltMode(hdc, HALFTONE);
 			SetBrushOrgEx(hdc, 0, 0, NULL);
 			HDC memdc = CreateCompatibleDC(hdc);
+			assert(memdc != NULL);
 			SelectObject(memdc, MyBitmapsArray[shape]);
 			int g = 0;
 			BITMAP mybitmap = { 0 };
@@ -521,7 +518,8 @@ LRESULT CALLBACK ButtonProcD(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 int MarkPresenceCheck(HANDLE hFile, int filelength, int dateticks, BOOL lswitch, int * shapevalue, int * colorvalue, BOOL * mydflags)//make a switch for mark presence check to be able to be used both as day reader and month reader. Switch should be TRUE when doing "checking" to override existing data" false when reading it just to color shit.
 {
 	OVERLAPPED localoverlapstruct = { 0 };
-	char* TempBuffer = calloc(filelength, sizeof(char));
+	char* TempBuffer = { 0 };
+	TempBuffer = SafeCalloc( filelength,  sizeof(char));
 	if (FALSE == ReadFile(hFile, TempBuffer, filelength, NULL, &localoverlapstruct))
 	{
 		CrashDumpFunction(80,0);
@@ -531,6 +529,7 @@ int MarkPresenceCheck(HANDLE hFile, int filelength, int dateticks, BOOL lswitch,
 	year = dateticks >> 11;
 	month = ((dateticks & 0x7ff) >> 7);
 	day = dateticks & 0x7f;//will be used if lswitch is true, otherwise it will be updated later on to a value from the markdata buffer.
+	assert(year >= 0 && month >= 0 && day >= 0);
 	int indexplace = 0;
 	int checker = 0;
 	BOOL flag69 = FALSE;
@@ -540,6 +539,7 @@ int MarkPresenceCheck(HANDLE hFile, int filelength, int dateticks, BOOL lswitch,
 		CrashDumpFunction(81,0);
 		return -1;
 	}
+	assert(TempBuffer != NULL);
 	while ((TempBuffer[indexplace] == '|') && (indexplace < filelength))
 	{
 		i = indexplace + 1;//go to indexplace and skip '|'
@@ -580,6 +580,7 @@ int MarkPresenceCheck(HANDLE hFile, int filelength, int dateticks, BOOL lswitch,
 HWND datetickfunction(int datetick, char * filebuffer, int * i)
 {
 	HWND refferentdate = { 0 };
+	assert(filebuffer != NULL);
 	if (datetick > 0)//here we get hwnd and hdc
 	{
 		int year = 0, month = 0, day = 0;
@@ -601,6 +602,7 @@ HWND datetickfunction(int datetick, char * filebuffer, int * i)
 		++*i;
 		filebuffer[(*i)++] = ',';
 		day = datetick & 0x7f;
+		assert(datetick >= 0);
 		TrustedIndex3 = day;//to avoid spectreloadmitigation
 		if (TrustedIndex3 < 10)
 		{
@@ -623,6 +625,7 @@ HWND datetickfunction(int datetick, char * filebuffer, int * i)
 
 BOOL DateColoring(int colorid, HWND refferentdate, HDC hdc, char * filebuffer, int * i)
 {
+	assert(refferentdate != NULL);
 	HBRUSH hBrush = { 0 };
 	hBrush = CreateSolidBrush(ColorSelection[colorid-100]);
 	RECT localrect = { 0 };
@@ -634,6 +637,7 @@ BOOL DateColoring(int colorid, HWND refferentdate, HDC hdc, char * filebuffer, i
 	GetClientRect(refferentdate, &localrect);
 	FillRect(hdc, &localrect, hBrush);
 	ReleaseDC(refferentdate, hdc);
+	assert(filebuffer != NULL);
 	_itoa_s(colorid, filebuffer + *i, 4, 10);
 	*i += 3;
 	DeleteObject(hBrush);
@@ -642,6 +646,7 @@ BOOL DateColoring(int colorid, HWND refferentdate, HDC hdc, char * filebuffer, i
 
 BOOL DateShaping(int shapeid, char* filebuffer, int* i, int datetick)
 {
+	assert(filebuffer != NULL);
 	int day = datetick & 0x7f;
 	int shape = 0;
 	HDC hdc = 0;
@@ -650,6 +655,7 @@ BOOL DateShaping(int shapeid, char* filebuffer, int* i, int datetick)
 	else return FALSE;
 	HDC memdc = CreateCompatibleDC(hdc);//create compatible DC memory
 	RECT DateRect = { 0 };
+	assert(buttondates[day] != NULL);
 	GetWindowRect(buttondates[day], &DateRect);//all dates have the same size
 	shape = shapeid-1;
 	SetStretchBltMode(hdc, HALFTONE);
@@ -682,13 +688,16 @@ BOOL DateShaping(int shapeid, char* filebuffer, int* i, int datetick)
 
 HWND ColorRemovalRoutine(int offsetpresent, int shiuze, OVERLAPPED fuckshit, HANDLE hFile, HWND refferentdate, int datetick)
 {
+	assert(refferentdate != NULL);
+	assert(hFile != INVALID_HANDLE_VALUE);
 	OVERLAPPED localoffset = { 0 };
 	localoffset.Offset = fuckshit.Offset;
 	if (offsetpresent >= 0)
 	{
 		char markdata[40] = { 0 };
 		int sizetoedit = shiuze - fuckshit.Offset;
-		char* filebuffer = calloc(sizetoedit, sizeof(char));
+		char* filebuffer = { 0 };
+		SafeCalloc( sizetoedit,  sizeof(char));
 		DWORD returnval = 0;
 		if (ReadFile(hFile, filebuffer, sizetoedit, &returnval, &localoffset) == FALSE || filebuffer == NULL)
 		{
@@ -733,11 +742,13 @@ HWND ColorRemovalRoutine(int offsetpresent, int shiuze, OVERLAPPED fuckshit, HAN
 
 HWND MarkRemoveRoutine(int offsetpresent, int shiuze, OVERLAPPED fuckshit, HANDLE hFile, int datetick, HWND refferentdate)
 {
+	assert(hFile != INVALID_HANDLE_VALUE);
+	assert(refferentdate != NULL);
 	if (offsetpresent >= 0)
 	{
 		char markdata[40] = { 0 };
 		int sizetoedit = shiuze - fuckshit.Offset;
-		char* filebuffer = calloc(sizetoedit, sizeof(char));
+		char* filebuffer = SafeCalloc(sizetoedit,  sizeof(char));
 		if ((ReadFile(hFile, filebuffer, sizetoedit, NULL, &fuckshit) == FALSE) || filebuffer == NULL)
 		{
 			free(filebuffer);
@@ -777,6 +788,8 @@ HWND MarkRemoveRoutine(int offsetpresent, int shiuze, OVERLAPPED fuckshit, HANDL
 
 char * marksbuffermodifier(int shapeid, int colorid, char * filebuffer, int datetick, int * i, int presentshapeval, HWND refferentdate, HDC hdc, int presentcolorval)
 {
+	assert(refferentdate != NULL);
+	assert(hdc != NULL);
 	if (shapeid > 0)//shapes
 	{
 		if (FALSE == DateShaping(shapeid, filebuffer, i, datetick))
@@ -818,10 +831,12 @@ char * marksbuffermodifier(int shapeid, int colorid, char * filebuffer, int date
 #pragma warning(disable:4702)//idiot warning supression
 bool marksmonthcheck(char * marksbuffer, int filesize)
 {
+	assert(filesize >= 0);
 	int lyear = 0;
 	int lmonth = 0;
 	int lflag1 = 0;
 	char localbuffer[6] = { 0 };
+	assert(MonthYearIndex >= 0);
 	if (MonthYearIndex >= 12)
 		lyear = (MonthYearIndex / 12) + yearzero;
 	else
@@ -831,7 +846,7 @@ bool marksmonthcheck(char * marksbuffer, int filesize)
 		lmonth = 12;
 	if (marksbuffer != NULL)
 	{
-		for (int qn = 0; (marksbuffer[qn] == '|') && (qn < filesize); qn += 18)
+		for (int qn = 0; (marksbuffer[qn] == '|') && (qn < filesize) && (qn<MAXINT); qn += 18)
 		{
 			lflag1 = 0;
 			int z = qn;
@@ -878,14 +893,16 @@ bool marksmonthcheck(char * marksbuffer, int filesize)
 //paints the date if marks present
 bool markspaint(BOOL* dateflags)
 {
+	assert(dateflags != NULL);
 	OVERLAPPED overlapstruct = { 0 };
 	HANDLE hFile = { 0 };
 	int filesize = 0;
 	char tempstring1[1000] = { 0 };
 	sprintf_s(tempstring1, 1000, "%sMarksData.txt", theworkingdirectory);
 	hFile = CreateFileA(tempstring1, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	assert(hFile != INVALID_HANDLE_VALUE);
 	filesize = GetFileSize(hFile, NULL);
-	char* marksbuffer = calloc(filesize, sizeof(char));
+	char* marksbuffer = SafeCalloc(  filesize,    sizeof(char));
 	overlapstruct.Offset = 0;
 	if (FALSE == ReadFile(hFile, marksbuffer, filesize, NULL, &overlapstruct))
 	{
@@ -905,6 +922,8 @@ bool markspaint(BOOL* dateflags)
 
 char * dataovverridingsmarks(char * tempbuffer2, char * TempBuffer, BOOL * flag69, int day, int * indexplace, int * colorvalue, int * shapevalue, int * checker, int * i)
 {
+	assert(tempbuffer2 != NULL);
+	assert(TempBuffer != NULL);
 	(*i)--;//to get position to the beggining of the day
 	*flag69 = TRUE;
 	if (day >= 10)
@@ -950,6 +969,8 @@ char * dataovverridingsmarks(char * tempbuffer2, char * TempBuffer, BOOL * flag6
 
 HWND colorshapepresent(HWND refferentbutton, BOOL * mydflags, int shape, int color, int day)
 {
+	assert(refferentbutton != NULL);
+	assert(mydflags != NULL);
 	RECT myrect = { 0 };
 	HDC hdc = { 0 };
 	HANDLE tmpfile = { 0 };
@@ -998,6 +1019,7 @@ HWND colorshapepresent(HWND refferentbutton, BOOL * mydflags, int shape, int col
 
 char* tempbuffermarkchecker(BOOL * flag69, int *checker, char * tempbuffer2, char * TempBuffer, BOOL lswitch, int * day, BOOL * mydflags, int * i, int month, int * indexplace, int * colorvalue, int * shapevalue)
 {
+	assert(flag69 != NULL && tempbuffer2 != NULL && TempBuffer != NULL);
 	*flag69 = FALSE;
 	*checker += 1;
 	int x = 0;
@@ -1073,6 +1095,7 @@ int fontamount = 0;
 
 INT_PTR CALLBACK FontBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+	assert(hwnd != NULL);
 	HWND hwndtemp = 0, hwndFont = 0, controlhwnd = 0;
 	int value = 0;
 	if (lParam == 0)
@@ -1084,10 +1107,11 @@ INT_PTR CALLBACK FontBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 		FontBoxHwnd = hwnd;
 		//fill the font type list
 		HDC hdc = GetDC(hwnd);
+		assert(hdc != NULL);
 		LOGFONT logfont = { 0 };
 		EnumFontFamiliesExW(hdc, &logfont, EnumFontFamilyProc, 0, 0);
 		controlhwnd = GetDlgItem(hwnd, IDC_FONTTYPE);
-		for (int i = 0; i < fontamount - 1; i++)
+		for (int i = 0; i < fontamount - 1 && i<1000; i++)
 		{
 			ComboBox_InsertString(controlhwnd, i, fontlist[i]);
 		}
@@ -1112,6 +1136,7 @@ INT_PTR CALLBACK FontBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 			((int)(DWORD)SendMessageA((controlhwnd), 0x014A, (WPARAM)(int)(i), (LPARAM)(LPCTSTR)(colorsdata[133+i].colorname)));
 		}
 		controlhwnd = GetDlgItem(hwnd, IDC_FUNDERLINE);
+		assert(controlhwnd != NULL);
 		char tempstring22[200] = "Cf1,Underline,Invert,Dash,DashDot,DashDotDot,Dotted,Double,DoubleWave,Hairline,HeavyWave,LongDash,None,Thick,ThickDash,ThickDashDot,ThickDashDotDot,ThickDotted,ThickLongDash,Wave,Word";
 		for (int i = 0, m = 0; i < 21; i++)
 		{
@@ -1124,6 +1149,7 @@ INT_PTR CALLBACK FontBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 		break;
 	case WM_COMMAND:
 		hwndtemp = GetDlgItem(hwnd, LOWORD(wParam));
+		assert(hwndtemp != NULL);
 		CHARFORMAT2 cfrm = { 0 };
 		switch (LOWORD(wParam))
 		{//RADIOS
@@ -1134,6 +1160,7 @@ INT_PTR CALLBACK FontBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 			case BN_CLICKED:
 				if (value == BST_UNCHECKED)
 				{
+					assert(TextBoxInput != NULL);
 					((void)SendMessageW((hwndtemp), 0x00F1, (WPARAM)(int)(0x0001), 0L));
 					SendMessage(TextBoxInput, EM_GETCHARFORMAT, SCF_SELECTION, (LPARAM)&cfrm);
 					cfrm.cbSize = sizeof(CHARFORMAT2);
@@ -1144,6 +1171,7 @@ INT_PTR CALLBACK FontBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 				}
 				else if (value == BST_CHECKED)
 				{
+					assert(TextBoxInput != NULL);
 					((void)SendMessageW((hwndtemp), 0x00F1, (WPARAM)(int)(0x0000), 0L));
 					SendMessage(TextBoxInput, EM_GETCHARFORMAT, SCF_SELECTION, (LPARAM)&cfrm);
 					cfrm.cbSize = sizeof(CHARFORMAT2);
@@ -1161,6 +1189,7 @@ INT_PTR CALLBACK FontBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 				value = Button_GetCheck(hwndtemp);
 				if (value == BST_UNCHECKED)
 				{
+					assert(TextBoxInput != NULL);
 					((void)SendMessageW((hwndtemp), 0x00F1, (WPARAM)(int)(0x0001), 0L));
 					SendMessage(TextBoxInput, EM_GETCHARFORMAT, SCF_SELECTION, (LPARAM)&cfrm);
 					cfrm.cbSize = sizeof(CHARFORMAT2);
@@ -1171,6 +1200,7 @@ INT_PTR CALLBACK FontBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 				}
 				else if (value == BST_CHECKED)
 				{
+					assert(TextBoxInput != NULL);
 					((void)SendMessageW((hwndtemp), 0x00F1, (WPARAM)(int)(0x0000), 0L));
 					SendMessage(TextBoxInput, EM_GETCHARFORMAT, SCF_SELECTION, (LPARAM)&cfrm);
 					cfrm.cbSize = sizeof(CHARFORMAT2);
@@ -1188,6 +1218,7 @@ INT_PTR CALLBACK FontBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 				value = Button_GetCheck(hwndtemp);
 				if (value == BST_UNCHECKED)
 				{
+					assert(TextBoxInput != NULL);
 					((void)SendMessageW((hwndtemp), 0x00F1, (WPARAM)(int)(0x0001), 0L));
 					SendMessage(TextBoxInput, EM_GETCHARFORMAT, SCF_SELECTION, (LPARAM)&cfrm);
 					cfrm.cbSize = sizeof(CHARFORMAT2);
@@ -1198,6 +1229,7 @@ INT_PTR CALLBACK FontBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 				}
 				else if (value == BST_CHECKED)
 				{
+					assert(TextBoxInput != NULL);
 					((void)SendMessageW((hwndtemp), 0x00F1, (WPARAM)(int)(0x0000), 0L));
 					SendMessage(TextBoxInput, EM_GETCHARFORMAT, SCF_SELECTION, (LPARAM)&cfrm);
 					cfrm.cbSize = sizeof(CHARFORMAT2);
@@ -1215,6 +1247,7 @@ INT_PTR CALLBACK FontBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 				value = Button_GetCheck(hwndtemp);
 				if (value == BST_UNCHECKED)
 				{
+					assert(TextBoxInput != NULL);
 					((void)SendMessageW((hwndtemp), 0x00F1, (WPARAM)(int)(0x0001), 0L));
 					SendMessage(TextBoxInput, EM_GETCHARFORMAT, SCF_SELECTION, (LPARAM)&cfrm);
 					cfrm.cbSize = sizeof(CHARFORMAT2);
@@ -1225,6 +1258,7 @@ INT_PTR CALLBACK FontBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 				}
 				else if (value == BST_CHECKED)
 				{
+					assert(TextBoxInput != NULL);
 					((void)SendMessageW((hwndtemp), 0x00F1, (WPARAM)(int)(0x0000), 0L));
 					SendMessage(TextBoxInput, EM_GETCHARFORMAT, SCF_SELECTION, (LPARAM)&cfrm);
 					cfrm.cbSize = sizeof(CHARFORMAT2);
@@ -1242,6 +1276,7 @@ INT_PTR CALLBACK FontBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 				value = Button_GetCheck(hwndtemp);
 				if (value == BST_UNCHECKED)
 				{
+					assert(TextBoxInput != NULL);
 					((void)SendMessageW((hwndtemp), 0x00F1, (WPARAM)(int)(0x0001), 0L));
 					cfrm.cbSize = sizeof(CHARFORMAT2);
 					cfrm.dwMask = CFM_OFFSET | CFM_SIZE;
@@ -1253,6 +1288,7 @@ INT_PTR CALLBACK FontBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 				}
 				else if (value == BST_CHECKED)
 				{
+					assert(TextBoxInput != NULL);
 					((void)SendMessageW((hwndtemp), 0x00F1, (WPARAM)(int)(0x0000), 0L));
 					cfrm.cbSize = sizeof(CHARFORMAT2);
 					cfrm.dwMask = CFM_OFFSET | CFM_SIZE;
@@ -1271,6 +1307,7 @@ INT_PTR CALLBACK FontBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 				value = Button_GetCheck(hwndtemp);
 				if (value == BST_UNCHECKED)
 				{
+					assert(TextBoxInput != NULL);
 					((void)SendMessageW((hwndtemp), 0x00F1, (WPARAM)(int)(0x0001), 0L));
 					cfrm.cbSize = sizeof(CHARFORMAT2);
 					cfrm.dwMask = CFM_OFFSET | CFM_SIZE;
@@ -1282,6 +1319,7 @@ INT_PTR CALLBACK FontBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 				}
 				else if (value == BST_CHECKED)
 				{
+					assert(TextBoxInput != NULL);
 					((void)SendMessageW((hwndtemp), 0x00F1, (WPARAM)(int)(0x0000), 0L));
 					cfrm.cbSize = sizeof(CHARFORMAT2);
 					cfrm.dwMask = CFM_OFFSET | CFM_SIZE;
@@ -1298,6 +1336,7 @@ INT_PTR CALLBACK FontBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 			switch (HIWORD(wParam))
 			{
 			case EN_CHANGE:
+				assert(TextBoxInput != NULL);
 				value = GetDlgItemInt(FontBoxHwnd, IDC_EDITFONT, 0, FALSE);
 				SendMessage(TextBoxHwnd, EM_SETFONTSIZE,  (WPARAM)(-(fontvalue - value)), 0);
 				fontvalue = value;
@@ -1307,6 +1346,7 @@ INT_PTR CALLBACK FontBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 			switch (HIWORD(wParam))
 			{
 			case CBN_SELENDOK:
+				assert(TextBoxInput != NULL);
 				value = (int)SendMessage(hwndtemp, CB_GETCURSEL, 0, 0);
 				cfrm.cbSize = sizeof(CHARFORMAT2);
 				cfrm.dwMask = CFM_FACE;
@@ -1319,6 +1359,7 @@ INT_PTR CALLBACK FontBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 			switch (HIWORD(wParam))
 			{
 			case CBN_SELENDOK:
+				assert(TextBoxInput != NULL);
 				value = (int)SendMessage(hwndtemp, CB_GETCURSEL, 0, 0);
 				cfrm.cbSize = sizeof(CHARFORMAT2);
 				cfrm.dwMask = CFM_COLOR;
@@ -1333,6 +1374,7 @@ INT_PTR CALLBACK FontBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 			switch (HIWORD(wParam))
 			{
 			case CBN_SELENDOK:
+				assert(TextBoxInput != NULL);
 				value = (int)SendMessage(hwndtemp, CB_GETCURSEL, 0, 0);
 				cfrm.cbSize = sizeof(CHARFORMAT2);
 				cfrm.dwMask = CFM_BACKCOLOR;
@@ -1417,6 +1459,7 @@ INT_PTR CALLBACK FontBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 				default:
 					break;
 				}
+				assert(TextBoxInput != NULL);
 				SendMessage(TextBoxInput, EM_SETCHARFORMAT, SCF_SELECTION, (LPARAM)&cfrm);
 				SendMessage(TextBoxInput, EM_SETCHARFORMAT, 0, (LPARAM)&cfrm);
 			}
@@ -1425,6 +1468,7 @@ INT_PTR CALLBACK FontBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 			switch (HIWORD(wParam))
 			{
 			case CBN_SELENDOK:
+				assert(TextBoxInput != NULL);
 				value = (int)SendMessage(hwndtemp, CB_GETCURSEL, 0, 0);
 				cfrm.cbSize = sizeof(CHARFORMAT2);
 				cfrm.dwMask = CFM_BACKCOLOR;
@@ -1445,6 +1489,7 @@ INT_PTR CALLBACK FontBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 
 int CALLBACK EnumFontFamilyProc(const LOGFONT* lpelfe, const void* lpntme, DWORD      FontType, LPARAM     lParam)
 {
+	assert(lpelfe != NULL);
 	short dummy = 0;
 	static int amount = 3;
 	if (lParam || FontType || lpntme)
@@ -1458,12 +1503,7 @@ int CALLBACK EnumFontFamilyProc(const LOGFONT* lpelfe, const void* lpntme, DWORD
 #pragma warning(disable:4047)
 	if (fontlist == NULL)
 	{
-		tempppointer = calloc(sizeof(WCHAR*), 2);
-		if (tempppointer == NULL)
-		{
-			CrashDumpFunction(31464, 1);
-			return FALSE;
-		}
+		tempppointer = SafeCalloc(  sizeof(WCHAR*),    2);
 		fontlist = tempppointer;
 	}
 	else
@@ -1478,7 +1518,8 @@ int CALLBACK EnumFontFamilyProc(const LOGFONT* lpelfe, const void* lpntme, DWORD
 		
 	}
 #pragma warning(default:4047)
-	fontlist[index] = calloc(32, sizeof(WCHAR));
+	assert(fontlist[index] == NULL);
+	fontlist[index] = SafeCalloc( 32,   sizeof(WCHAR));
 	wmemcpy_s(fontlist[index], 100, fontname, 32);
 	index++;
 	amount++;
@@ -1495,9 +1536,11 @@ int ColorsMaker(RGBData mycolors[])
 	int m = 0;
 	for (int i = 0; i < 150; i++)
 	{
+		assert(m < (int)strlen(colornames));
 		_memccpy(mycolors[i].colorname, colornames+m, ',', 50);
 		mycolors[i].RGBcolor = colorset[i];
 		int g = (int)strlen(mycolors[i].colorname);
+		assert((g - 1) >= 0);
 		mycolors[i].colorname[g-1] = 0;
 		m += g;
 	}

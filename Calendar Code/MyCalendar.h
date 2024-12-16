@@ -1,15 +1,28 @@
 #pragma once
 
-#include "Resource.h"
+#include "resource.h"
 #include <Windowsx.h>
 #include <stdbool.h>
 #include <strsafe.h>
 #include <Richedit.h>
 #include <CommCtrl.h>
+#include <assert.h>
+
+typedef struct dateanddata
+{
+	char date[24];
+	char* data;
+}dateanddata, ** lpdateanddata, * fagdata;
+
+typedef struct date
+{
+	int year;
+	int month;
+	int day;
+}date, ** ppdate, * pdate;
 
 #define buttonfactor 24
 extern size_t TextHeapRemaining;
-extern HANDLE myHeap;
 extern int yearrange;
 extern BOOL RTForTXT;
 
@@ -68,12 +81,10 @@ BOOL buttonMkCreationRoutine(HWND* markarray, HWND hwnd, LPWSTR* Marks);
 int PopChildMonth(HWND hwnd, int lastwindow);
 int PushChildMonth(HWND hwnd, int firstwindow);
 
-int ScrollingFunction(HWND hwnd, WPARAM wParam, int type);
 BOOL ChildCreationFunction(void);
 BOOL DestroyButton(HWND hwnd);
 
 //Debugging functions
-void cleaner4100(LPWSTR something, HINSTANCE something2);
 BOOL ShowMessage(HWND hwnd, int XClient, int YClient, UINT message);
 
 //cause of 
@@ -128,7 +139,7 @@ typedef struct monthdataunit
 	datedataunit monthdata[32];
 }monthdataunit;
 
-BOOL datactionswitch(short int message);
+
 int mystringtoint(LPCSTR string);
 BOOL RangedDataWipe(int monthup, int monthdown, int yearup, int yeardown, int dayup, int daydown);
 int MarkPresenceCheck(HANDLE hFile, int filelength, int dateticks, BOOL lswitch, int* shapevalue, int* colorvalue, BOOL* mydflags);
@@ -181,13 +192,82 @@ BOOL savingFunction(int* appendlocationindex, char* pchInputBuf, OVERLAPPED* ove
 int DateTestBufferLoad(int* amountread, OVERLAPPED* overlapstruct, int* appendlocationindex, BOOL* datepresent);
 char* DataSaveReordering(char* readbuffer);
 
-void txtBold(HWND hWindow); //for bold-text
-void txtUnderlined(HWND hWindow); //for underlined-text
-void txtItalic(HWND hWindow); //for itaic-text
-void txtStrikeout(HWND hWindow); //for strikeout-text
-void Subscript(HWND hWindow); //for Sub-text
-void Superscript(HWND hWindow); //for Super-text
-void SetFont(HWND hWindow, const char* Font); //define the fontname in the ""
-void FontSize(HWND hWindow, int size); //set the fontsize 
 void txtColor(HWND hWindow, COLORREF clr); //set the text color
 void txtBackColor(HWND hWindow, COLORREF clr); //Set the textbackgroundcolor
+
+char* ScriptFormat(char* Inputbuffer);
+INT_PTR CALLBACK DlgSettingsProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK DlgHelpAndInfoProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK DlgScriptedInput(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK DlgScriptMacros(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK DlgScriptDates(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK MarkBoxInputSrc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK ListBoxSrc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK DlgColorWindows(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK DlgMonthsRange(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam);
+BOOL RangedDataWipe(int monthup, int monthdown, int yearup, int yeardown, int dayup, int daydown);
+char* DateInput(int mflag, int filesize, char* readbuffer, int* appendindexlocation, char* dateset, int i);
+char* yearange(char* readbuffer, int filesize, char* dateset, int* appendindexlocation);
+char* monthrange(int filesize, char* readbuffer, char* dateset, int* appendindexlocation);
+BOOL CalendarCreate(BOOL RealorCustom, int startyear, int newyearrange);
+char* whcararryinputroutine(char* wchararray, int* dateprint, int monthtype, int y);
+char* monthtypegen(char* wchararray, int dateyear, int datemonth, int* monthtype, int* thirty, int* leap, int* thirtyone);
+char* MacroFormating(char* macroformated, BOOL firstrun);
+int NumbersFunction(int* symbolsarray, int maxsymbols, char* macroformated, int numbersbegginingindex, BOOL FloatFlag, int* lastbyteindex);
+BOOL comparestrings(char* string1, char* string2);
+
+char* DataSaveReordering(char* readbuffer);
+int NearestDate(int mflag, int filesize, char* readbuffer, int* appendindexlocation, char* dateset, int i);
+
+LRESULT TextBoxInputSbc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData);
+
+int DateTestBufferLoad(int* amountread, OVERLAPPED* overlapstruct, int* appendlocationindex, BOOL* datepresent);
+BOOL savingFunction(int* appendlocationindex, char* pchInputBuf, OVERLAPPED* overlapstruct, int* amountread, BOOL datepresent);
+BOOL LargeDataWrite(char* pchInputBuf, OVERLAPPED* overlapstruct, int* amountread, size_t strLength, HANDLE hFile, size_t* oldstringlength);
+BOOL SmallDataWrite(char* pchInputBuf, OVERLAPPED* overlapstruct, int* amountread, size_t strLength, HANDLE hFile, size_t* oldstringlength);
+BOOL DataWriteOver(char* pchInputBuf, OVERLAPPED* overlapstruct, int* amountread, size_t strLength, HANDLE hFile);
+
+BOOL DateWrite(int* appendindexlocation, char* dateset);
+char* DateTextShow(char* selecteddate1);
+
+void txtColor(HWND hWindow, COLORREF clr); //set the text color
+void txtBackColor(HWND hWindow, COLORREF clr); //Set the textbackgroundcolor
+
+DWORD CALLBACK EditStreamOutCallback(DWORD_PTR dwCookie, LPBYTE pbBuff, LONG cb, LONG* pcb);
+DWORD CALLBACK EditStreamInCallback(DWORD_PTR dwCookie, LPBYTE pbBuff, LONG cb, LONG* pcb);
+
+LRESULT CALLBACK ButtonProcMk(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
+LRESULT CALLBACK TempBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
+void Timerproc(HWND hwnd, UINT message, UINT_PTR wParam, DWORD lParam);
+void marksfilepresent(int bithsize, HANDLE hFile);
+RECT buttonswindow(HWND hwnd, POINT mypt);
+void DatesChangeWindow(HWND hwnd, POINT mypt, RECT TempRect2);
+void ShapesChangeButton(int indexselected, HWND hwnd);
+void RGBDatatxtUpdate(char* filebuffer, int realindex, int selectedcolor, int filesize, HANDLE hFile, OVERLAPPED overlapstruct);
+RECT ButtonsBarFunction(RECT LocalRect, HDC hdc, HWND hwnd, int* step, RECT DataUpdateRect);
+RECT ButtonsDataWipeandBelow(char* mytimedata, RECT LocalRect, RECT TempRect, HDC hdc, HBRUSH frameBrush, int* step, RECT DataUpdateRect);
+
+LRESULT CALLBACK ButtonProcD(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK FontBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
+int CALLBACK EnumFontFamilyProc(const LOGFONT* lpelfe, const void* lpntme, DWORD      FontType, LPARAM     lParam);
+
+HWND datetickfunction(int datetick, char* filebuffer, int* i);
+BOOL DateColoring(int colorid, HWND refferentdate, HDC hdc, char* filebuffer, int* i);
+BOOL DateShaping(int shapeid, char* filebuffer, int* i, int datetick);
+HWND ColorRemovalRoutine(int offsetpresent, int shiuze, OVERLAPPED fuckshit, HANDLE hFile, HWND refferentdate, int datetick);
+HWND MarkRemoveRoutine(int offsetpresent, int shiuze, OVERLAPPED fuckshit, HANDLE hFile, int datetick, HWND refferentdate);
+char* marksbuffermodifier(int shapeid, int colorid, char* filebuffer, int datetick, int* i, int presentshapeval, HWND refferentdate, HDC hdc, int presentcolorval);
+bool markspaint(BOOL* dateflags);
+bool marksmonthcheck(char* marksbuffer, int filesize);
+char* tempbuffermarkchecker(BOOL* flag69, int* checker, char* tempbuffer2, char* TempBuffer, BOOL lswitch, int* day, BOOL* mydflags, int* i, int month, int* indexplace, int* colorvalue, int* shapevalue);
+HWND colorshapepresent(HWND refferentbutton, BOOL* mydflags, int shape, int color, int day);
+char* dataovverridingsmarks(char* tempbuffer2, char* TempBuffer, BOOL* flag69, int day, int* indexplace, int* colorvalue, int* shapevalue, int* checker, int* i);
+int ColorsMaker(RGBData mycolors[]);
+
+int LoadConfigData(size_t filesize, char* tempstring, BOOL readflag, HANDLE hFile);
+int ArrangeDates(char* tempdate, int datesamount, pdate datesarray, lpdateanddata mydataset);
+void FindFirstDate(pdate datesarray, int i, char* date, char* readbuffer, int datesamount, int stringlength, lpdateanddata mydataset);
+void IFComparison(char* macroformated, int dummyint, double ifstatement2, int* ifnumber, double* ifstatement1, int* i, BOOL* myswitch, int length, int ifsign, int* n);
+void ButtonsFunction(LPARAM lParam, HWND hwnd, int step);
+
+void* SafeCalloc(size_t size, int bytes);

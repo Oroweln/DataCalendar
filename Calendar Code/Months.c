@@ -35,6 +35,7 @@ LRESULT CALLBACK MonthsProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 	case WM_CREATE:
 		// To enumerate all styles of all fonts for the ANSI character set 
 		hdc = GetDC(hwnd);
+		assert(hdc != NULL);
 		GetTextMetrics(hdc, &tm);
 		cxChar = tm.tmAveCharWidth;
 		cxCaps = (tm.tmPitchAndFamily & 1 ? 3 : 2) * cxChar / 2;
@@ -53,20 +54,13 @@ LRESULT CALLBACK MonthsProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 		si.nMin = 0;
 		si.nMax = buttonrect.bottom * yearrange;
 		si.nPage = buttonrect.bottom;
+		assert(yearange >= 0);
 		buttonrect.left = MonthRect.right / 4;
 		buttonrect.top = MonthRect.top;
 		buttonrect.right = MonthRect.right;
 		buttonrect.bottom = MonthRect.bottom/24;
 		buttonrect.left = 0;
-		//MoveWindow(hwnd, MonthRect.left, MonthRect.top, MonthRect.right, MonthRect.bottom, FALSE);
-		//bunch of buttons to be created just before they are shown, and then destroyed when they are far from being show
 		return 0;
-
-	//case WM_VSCROLL:
-		//lastpos = ScrollingFunction(hwnd, wParam, SB_VERT);
-		//offset = DynamicScroll(lastpos, hwnd, si, offset, buttonarray);
-		//InvalidateRect(hwnd, NULL, TRUE);
-		//return 0;
 
 	case WM_COMMAND:
 		if (MonthCreationFlag)
@@ -75,6 +69,7 @@ LRESULT CALLBACK MonthsProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 			GetSystemTime(&sTime);
 			SystemTimeToTzSpecificLocalTime(NULL, &sTime, &sTime);
 			int indexvar = (startyear - yearzero) * 12;
+			assert(indexvar >= 0);
 			if (indexvar < 24)
 				indexvar = 24;
 			if (indexvar > yearrange-24)//this and above is in order to avoid problems with displaying months 
@@ -93,6 +88,7 @@ LRESULT CALLBACK MonthsProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 			//here put some shoddyfunction to get the things talked about in notes.
 			InvalidateRect(hwnd, NULL, TRUE);
 		}
+		assert(startmonth >= 0);
 		if (startmonth == 0)
 			startmonth++;
 		SendMessage(buttonarray[startmonth-1], WM_LBUTTONDOWN, 0, 0);
@@ -104,6 +100,7 @@ LRESULT CALLBACK MonthsProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 	case WM_PAINT:
 		hdc = BeginPaint(hwnd, &ps);
 		HBRUSH hBrush = CreateSolidBrush(monthsbackground);
+		assert(hBrush != INVALID_HANDLE_VALUE);
 		SetBkColor(hdc, monthsbackground);
 		FillRect(hdc, &ps.rcPaint, hBrush);
 		DeleteObject(hBrush);
@@ -134,6 +131,7 @@ LRESULT CALLBACK MonthsProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 			triv[1].Red = GetRValue(monthsbuttoncolor) * 255;
 			triv[1].Blue = GetBValue(monthsbuttoncolor) * 255;
 			triv[1].Green = GetGValue(monthsbuttoncolor) * 255;
+			assert(buttonarray != NULL);
 			GetWindowRect(buttonarray[TrustedIndex], &windorect);
 			MapWindowPoints(NULL, hwnd, (LPPOINT)&windorect, 2);
 			GradientFill(hdc, triv, 2, &grr, 1, GRADIENT_FILL_RECT_V);
@@ -156,6 +154,7 @@ LRESULT CALLBACK MonthsProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 			TEXTMETRICA textmetric = { 0 };
 			HDC monthshdc = { 0 };
 			monthshdc = GetDC(GetParent(buttonarray[0]));
+			assert(monthshdc != NULL);
 			GetTextMetricsA(monthshdc, &textmetric);
 			ReleaseDC(GetParent(buttonarray[0]), monthshdc);
 		}
@@ -175,6 +174,7 @@ LRESULT CALLBACK MonthsProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 		localpoint.x = 1;
 		localpoint.y = 1;
 		localhwnd = ChildWindowFromPoint(hwnd, localpoint);
+		assert(localhwnd != NULL);
 		int firstbuttonid = 0;
 		firstbuttonid = (int)GetWindowLongPtr(localhwnd, GWLP_USERDATA);
 		wheeldelta = GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
@@ -195,6 +195,8 @@ LRESULT CALLBACK MonthsProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 
 HWND CreateButtonM(LPWSTR szString, RECT Size, HWND hwnd, int index)
 {
+	assert(hwnd != NULL);
+	assert(szString != NULL);
 	static BOOL firsttime = TRUE;
 	WNDCLASSEX buttonclass =
 	{
@@ -241,7 +243,6 @@ LRESULT ButtonProcM(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	-Hot state, on stack.
 	-Cold state, on external data file.
 	*/
-
 	static int paintcall = 0, cxClient = 0, cyClient = 0, lastlocalint = 0, cyChar = 0;
 	PAINTSTRUCT ps = { NULL };
 	HDC hdc;
@@ -263,8 +264,9 @@ LRESULT ButtonProcM(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			RECT temprect9 = { 0 };
 			GetClientRect(hwnd, &temprect9);
 			myfont = CreateFontA(0, temprect9.bottom / 3, 0, 0, FW_REGULAR, TRUE, FALSE, FALSE, ANSI_CHARSET, OUT_CHARACTER_PRECIS, CLIP_TT_ALWAYS, PROOF_QUALITY, FIXED_PITCH, NULL);
+			assert(myfont != NULL);
 			Firstbuttonflag = FALSE;
-			mindexspace = calloc((size_t)yearrange+100, sizeof(char));
+			mindexspace = SafeCalloc(  (size_t)yearrange+100,    sizeof(char));
 		}
 		return 0;
 	case WM_LBUTTONDOWN: //memory leak happens befor buttondown message is even sent
@@ -273,6 +275,7 @@ LRESULT ButtonProcM(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 			TextBoxCalFlag = TRUE;
 		}
+		assert(TextBoxInput != NULL);
 		Edit_Enable(TextBoxInput, FALSE);
 		markflagmonth = TRUE; //check if there is a mark in the month where we going, so the painting loop can be done for it. 
 		GetClientRect(hwnd, &localrect);
@@ -287,6 +290,7 @@ LRESULT ButtonProcM(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		if (MonthYearIndex % 12 == 0)
 			currentyear--;
 		selecteddate += currentyear << 11; //update year data for selectedate
+		assert(mindexspace != NULL);
 		mindexspace[lastlocalint] = FALSE;
 		mindexspace[MonthYearIndex] = TRUE;
 		lastlocalint = MonthYearIndex;				
@@ -299,13 +303,13 @@ LRESULT ButtonProcM(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		if (MonthYearIndex >= 12)
 			startyear = (MonthYearIndex / 12) + yearzero;
 		else startyear = 0;
-		//datactionswitch(3, );//upon clicking send message to dataformating.c. Shall we create datafile first?
 		return 0;
 	case WM_SIZE:
 			cxClient = LOWORD(lParam);
 			cyClient = HIWORD(lParam);
 			return 0;
 	case WM_PAINT:
+		assert(mindexspace != NULL);
 			paintcall++;
 			hdc = BeginPaint(hwnd, &ps);	
 			OVERLAPPED overlapstruct = { 0 };
@@ -342,7 +346,6 @@ LRESULT ButtonProcM(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			SelectObject(hdc, myfont);
 			TextOutA(hdc, (LONG)ps.rcPaint.right/3, (LONG)ps.rcPaint.bottom/2, month[monthindex-1], (int)strlen(month[monthindex-1]));
 			//put a , year at the end
-			//overlapstruct.Offset = ((monthindex * 150) + 6) + (150 * poppushindex);
 			overlapstruct.Offset -= 6;
 			if (overlapstruct.Offset == 1800)
 				randflag1 = TRUE;
@@ -356,16 +359,12 @@ LRESULT ButtonProcM(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			year[0] = yearbuffer;
 			TextOutA(hdc, (LONG)ps.rcPaint.left, (LONG)ps.rcPaint.top, year[0], (int)strlen(year[0]));
 			overlapstruct.Offset += 6;
+			assert(buttonarray != NULL);
 			if (GlobalDebugFlag == TRUE)
 			{
-				char* printstring = calloc(50, sizeof(char));
-				if (printstring == NULL)
-				{
-					CrashDumpFunction(4365, 1);
-					return FALSE;
-				}
+				char* printstring = SafeCalloc(  50,    sizeof(char));
 				int m = 0;
-				for (m = 0; hwnd != buttonarray[m]; m++)
+				for (m = 0; hwnd != buttonarray[m] && m<buttonfactor; m++)
 					;
 				sprintf_s(printstring, 50, "%d, %d", buttonindex, m);
 				TextOutA(hdc, (LONG)ps.rcPaint.right / 2, (LONG)ps.rcPaint.top, printstring, (int)strlen(printstring));
@@ -388,17 +387,21 @@ int PopChildMonth(HWND hwnd, int lastwindow)
 {
 	int static fag = 1;
 	RECT Temprect;
+	assert(buttonarray != NULL);
 	GetWindowRect(buttonarray[lastwindow], &Temprect);
 	MapWindowPoints(HWND_DESKTOP, GetParent(hwnd), (LPPOINT)&Temprect, 2);
 	MoveWindow(hwnd, Temprect.left, Temprect.top, Temprect.right-Temprect.left, Temprect.bottom-Temprect.top, TRUE);//pops the window by moving to the lastwindow pos
 	int lindex = (int)GetWindowLongPtr(hwnd, GWLP_USERDATA);
 	lindex += 24;
+	assert(hwnd != NULL);
 	SetWindowLongPtr(hwnd, GWLP_USERDATA, lindex);
 	return 0;
 }
 
 int PushChildMonth(HWND hwnd, int firstwindow)
 {
+	assert(hwnd != NULL);
+	assert(buttonarray != NULL);
 	RECT Temprect;
 	GetWindowRect(buttonarray[firstwindow], &Temprect);
 	MapWindowPoints(HWND_DESKTOP, GetParent(hwnd), (LPPOINT)&Temprect, 2);
@@ -412,6 +415,8 @@ int PushChildMonth(HWND hwnd, int firstwindow)
 //3rd consequent run of dynamicscroll starts incrementally updating things the same!!!
 int DynamicScroll(int scrollamount, HWND hwnd)
 {
+	assert(hwnd != NULL);
+	assert(buttonarray != NULL);
 	RECT monthsbuttonrect = { 0 };
 	static int firstwindow = 0, lastwindow = buttonfactor-1;//firstwindow is window that can be poped, lastwindow is window that can be pushed
 	GetClientRect(buttonarray[0], &monthsbuttonrect);
@@ -424,7 +429,7 @@ int DynamicScroll(int scrollamount, HWND hwnd)
 		firstwindow++;//firstwindow becomes the first window below the last window, and it is always the firstwindow's id + 1
 		if (firstwindow > buttonfactor - 1)//in case firstwindow's id is 23, then the the firstwindow+1, that is window below it, must have id of 0.
 			firstwindow = 0;
-		for (int i = firstwindow, k = -2; i != lastwindow; i++, k=i-1)//we here beging with i = firstwindow cause we need to move firstwindow to first place, that is now empty after the last one popped,
+		for (int i = firstwindow, k = -2; i != lastwindow && i<buttonfactor*2 && k< buttonfactor * 2; i++, k=i-1)//we here beging with i = firstwindow cause we need to move firstwindow to first place, that is now empty after the last one popped,
 			//k is -2 as a signal that firstwindow need to be puts at its place, that is relative to the 0y
 			//after the first iteration k is to be i-1, for GetRect calculation in order to position the target window relative to the window above it.
 		{
@@ -458,7 +463,7 @@ int DynamicScroll(int scrollamount, HWND hwnd)
 		lastwindow--;//lastwindow becomes the window before the lastwindow 
 		if (lastwindow < 0)//in case lastwindow's id is -1, then the the lastwindow-1, that is window above it, must have id of 23.
 			lastwindow = buttonfactor - 1;
-		for (int i = firstwindow, k = -2; i != lastwindow && i >= 0; i++, k = i - 1)//we here beging with i = firstwindow cause we need to move firstwindow to first place, that is now empty after the last one popped,
+		for (int i = firstwindow, k = -2; i != lastwindow && i >= 0 && i < buttonfactor * 2 && k < buttonfactor * 2; i++, k = i - 1)//we here beging with i = firstwindow cause we need to move firstwindow to first place, that is now empty after the last one popped,
 			//k is -2 as a signal that firstwindow need to be puts at its place, that is relative to the 0y
 			//after the first iteration k is to be i-1, for GetRect calculation in order to position the target window relative to the window above it.
 		{
@@ -491,6 +496,8 @@ int DynamicScroll(int scrollamount, HWND hwnd)
 
 BOOL buttonMCreationRoutine(HWND* buttonarrayd, HWND hwnd, LPWSTR* Months)
 {
+	assert(buttonarrayd != NULL);
+	assert(hwnd != NULL);
 	buttonrect.left = MonthRect.right / 4;
 	buttonrect.top = MonthRect.top;
 	buttonrect.right = buttonrect.left * 2;
@@ -510,6 +517,7 @@ BOOL buttonMCreationRoutine(HWND* buttonarrayd, HWND hwnd, LPWSTR* Months)
 
 int mystringtoint(LPCSTR string) //accepts up to 99.
 {
+	assert(string != NULL);
 	int returnval = 0;
 	int intarray[3] = { 0 };
 	for (int i = 0; i < 3; i++)
