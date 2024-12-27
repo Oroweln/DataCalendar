@@ -4,17 +4,13 @@ HWND buttonmarks[3] = { 0 };
 RECT buttonrectmk = { 0 };
 HFONT localfont = { 0 };
 
-RGBQUAD * dummydata = NULL;
-
 COLORREF inputsignalcolor = RGB(255, 100, 50);
 
 LRESULT CALLBACK MarkProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	HDC hdc;
-	int static cxClient = 0, cyClient = 0, cyChar=0, cxCaps=0, cxChar=0;
 	char* filebuffer = NULL;
 	PAINTSTRUCT ps;
-	TEXTMETRIC tm;
 	HANDLE MarksFile = { 0 };
 	HBRUSH hBrush = { 0 };//retard
 	static BOOL Flag68 = FALSE;
@@ -25,29 +21,28 @@ LRESULT CALLBACK MarkProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	switch (message)
 	{
 	case WM_CREATE:
-		hdc = GetDC(hwnd);
-		GetTextMetrics(hdc, &tm);
-		cxChar = tm.tmAveCharWidth;
-		cxCaps = (tm.tmPitchAndFamily & 1 ? 3 : 2) * cxChar / 2;
-		cyChar = tm.tmHeight + tm.tmExternalLeading;
-		ReleaseDC(hwnd, hdc);
-
 		for (TrustedIndex = 0; TrustedIndex < 3; TrustedIndex++)
 			buttonMkCreationRoutine(buttonmarks, hwnd, &Marktxt[TrustedIndex]);
 		char tempstring[1000] = { 0 };
 		assert(theworkingdirectory != NULL);
-		sprintf_s(tempstring, 1000, "%sMarksData.txt", theworkingdirectory);
+		if(-1 ==sprintf_s(tempstring, 1000, "%sMarksData.txt", theworkingdirectory))
+		{
+			CrashDumpFunction(50, 0);
+		}
 		MarksFile = CreateFileA(tempstring, GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
 		if(MarksFile!=NULL)
-			CloseHandle(MarksFile);
+			SafeCloseHandle(MarksFile);
 		//creation and/or Read of RGBDATA.txt
 		for (int zg = 0; zg < 1000; zg++)
 			tempstring[zg] = '\0';
-		sprintf_s(tempstring, 1000, "%sRGBData.txt", theworkingdirectory);
+		if(-1 ==sprintf_s(tempstring, 1000, "%sRGBData.txt", theworkingdirectory))
+		{
+			CrashDumpFunction(50, 0);
+		}
 		HANDLE hFile = CreateFileA(tempstring, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 		assert(hFile != INVALID_HANDLE_VALUE);
 		int bithsize = GetFileSize(hFile, NULL);
-		if (bithsize <= 0)//file not present, fill it with basic values
+		if (bithsize == INVALID_FILE_SIZE || bithsize == 0)//file not present, fill it with basic values
 		{
 			filebuffer = SafeCalloc(  2000,    sizeof(char));
 			ColorSelection[0] = RGB(255, 255, 255);
@@ -62,13 +57,18 @@ LRESULT CALLBACK MarkProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			int charsnumber = 0;
 			for (int i = 1; i < 101; i++)
 			{
-				charsnumber += sprintf_s(filebuffer + charsnumber, (1500 * sizeof(char))-charsnumber, "%d=%lu|", i, (DWORD)ColorSelection[i-1]);
+				int returnval = sprintf_s(filebuffer + charsnumber, (1500 * sizeof(char)) - charsnumber, "%d=%lu|", i, (DWORD)ColorSelection[i - 1]);
+				if (returnval == -1)
+				{
+					CrashDumpFunction(50, 0);
+				}
+				charsnumber += returnval;
 			}
 			OVERLAPPED overlapstructshit = { 0 };
-			WriteFile(hFile, filebuffer, charsnumber, NULL, &overlapstructshit);
+			SafewriteFile(hFile, filebuffer, charsnumber, NULL, &overlapstructshit);
 			free(filebuffer);
 			filebuffer = NULL;
-			CloseHandle(hFile);
+			SafeCloseHandle(hFile);
 		}
 		else//filepresent
 			marksfilepresent(bithsize, hFile);
@@ -85,34 +85,39 @@ LRESULT CALLBACK MarkProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 				directoryplace[f] = '\0';
 				offset = f;
 			}
-			sprintf_s(directoryplace + offset, (size_t)(1000 - offset), "%i.bmp", i);
+			if (-1 == sprintf_s(directoryplace + offset, (size_t)(1000 - offset), "%i.bmp", i))
+			{
+				CrashDumpFunction(50, 0);
+			}
 			BitmapHandle = LoadImageA(NULL, directoryplace, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);//Load image to get BITMAP handle
 			if(GetLastError() == 0)
 				MyBitmapsArray[i] = BitmapHandle;
 			else
 			{
-				sprintf_s(directoryplace + offset, (size_t)(1000 - offset), "%i.ico", i);
+				if(-1==sprintf_s(directoryplace + offset, (size_t)(1000 - offset), "%i.ico", i))
+				{
+					CrashDumpFunction(50, 0);
+				}
 				BitmapHandle = LoadImageA(NULL, directoryplace, IMAGE_ICON, 0, 0, LR_LOADFROMFILE);//Load image to get BITMAP handle
 				if (GetLastError() == 0)
 					MyBitmapsArray[i] = BitmapHandle;
 			}
 		}
 		return 0;
-
-	case WM_SIZE:
-
-		cxClient = LOWORD(lParam);
-		cyClient = HIWORD(lParam);
-		return 0;
 	case WM_COMMAND://???
 		yearmonthindex = LOWORD(wParam);
 		for (int zg = 0; zg < 1000; zg++)
 			tempstring[zg] = '\0';
 		assert(theworkingdirectory != NULL);
-		sprintf_s(tempstring, 1000, "%sMarksData.txt", theworkingdirectory);
+		if(-1==sprintf_s(tempstring, 1000, "%sMarksData.txt", theworkingdirectory))
+		{
+			CrashDumpFunction(50, 0);
+		}
 		MarksFile = CreateFileA(tempstring, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 		assert(MarksFile != INVALID_HANDLE_VALUE);
 		int filesize = GetFileSize(MarksFile, NULL);
+		if (filesize == INVALID_FILE_SIZE)
+			CrashDumpFunction(3120, 0);
 		int returnval = 0;
 		if(filesize>16)//enough data for dataset is present
 		{
@@ -143,7 +148,7 @@ LRESULT CALLBACK MarkProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			assert(datetosend >= 0);
 			MarkPresenceCheck(MarksFile, filesize, datetosend, FALSE, NULL, NULL, NULL);//read all marks data and set according colors if color present
 		}
-		CloseHandle(MarksFile);
+		SafeCloseHandle(MarksFile);
 
 		return 0; 
 	case MARK_DATESIGNAL:
@@ -152,35 +157,36 @@ LRESULT CALLBACK MarkProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_SHOWWINDOW:
 	case WM_PAINT:
 		hdc = BeginPaint(hwnd, &ps);
-
+		if (hdc == NULL)
+			CrashDumpFunction(90, 0);
 		RECT WindowSize = { 0,0,0,0 };
-		GetClientRect(hwnd, &WindowSize);
+		SafetGetClientRect(hwnd, &WindowSize);
 		if (Flag68 == TRUE)
 		{
-			hBrush = CreateSolidBrush(inputsignalcolor);
+			hBrush = SafetCreateSolidBrush(inputsignalcolor);
 		}
 		else
 			hBrush = CreateHatchBrush(HS_BDIAGONAL,RGB(0,0,255));
 		assert(hBrush != INVALID_HANDLE_VALUE);
-		FillRect(hdc, &WindowSize, hBrush);
-		DeleteObject(hBrush);
+		SafeFillRect(hdc, &WindowSize, hBrush);
+		SafeDeleteObject(hBrush);
 		RECT windorect = { 0 };
 		RECT daterect = { 0 };
 		RECT marksrect = { 0 };
 		assert(buttonmarks != NULL);
 		for (TrustedIndex = 0; TrustedIndex < 2; TrustedIndex++)
 		{
-			GetWindowRect(buttondates[0], &daterect);
-			MapWindowPoints(NULL, DatesHwnd, (LPPOINT)&daterect, 2);
-			GetWindowRect(buttonmarks[TrustedIndex], &windorect);
-			MapWindowPoints(NULL, hwnd, (LPPOINT)&windorect, 2);
-			GetWindowRect(hwnd, &marksrect);
-			MoveWindow(buttonmarks[TrustedIndex], (daterect.right - daterect.left)*2+ (daterect.right - daterect.left)/3 + 2 *TrustedIndex * (daterect.right - daterect.left), windorect.top, (daterect.right - daterect.left) * 2, (daterect.bottom - daterect.top) * 100, TRUE);
-			UpdateWindow(buttonmarks[TrustedIndex]);
+			GetWindowRectSafe(buttondates[0], &daterect);
+			MapWindowPointsSafe(NULL, DatesHwnd, (LPPOINT)&daterect, 2);
+			GetWindowRectSafe(buttonmarks[TrustedIndex], &windorect);
+			MapWindowPointsSafe(NULL, hwnd, (LPPOINT)&windorect, 2);
+			GetWindowRectSafe(hwnd, &marksrect);
+			MoveWindowSafe(buttonmarks[TrustedIndex], (daterect.right - daterect.left)*2+ (daterect.right - daterect.left)/3 + 2 *TrustedIndex * (daterect.right - daterect.left), windorect.top, (daterect.right - daterect.left) * 2, (daterect.bottom - daterect.top) * 100, TRUE);
+			UpdateWindowSafe(buttonmarks[TrustedIndex]);
 		}
-		MoveWindow(buttonmarks[2], 0, windorect.top, windorect.right / 3, (daterect.bottom - daterect.top) * 100, TRUE);
+		MoveWindowSafe(buttonmarks[2], 0, windorect.top, windorect.right / 3, (daterect.bottom - daterect.top) * 100, TRUE);
 
-		EndPaint(hwnd, &ps);
+		(void)EndPaint(hwnd, &ps);
 		return 0;
 	case WM_DESTROY:
 		PostQuitMessage(0);
@@ -194,7 +200,7 @@ BOOL buttonMkCreationRoutine(HWND* markarray, HWND hwnd, LPWSTR* Marks)
 	assert(markarray != NULL);
 	RECT daterect = { 0 };
 	assert(buttondates != NULL);
-	GetClientRect(buttondates[0], &daterect);
+	SafetGetClientRect(buttondates[0], &daterect);
 	buttonrectmk.left = 0;
 	buttonrectmk.top = 0;
 	buttonrectmk.right = (daterect.right - daterect.left);
@@ -238,7 +244,7 @@ HWND CreateButtonMk(LPWSTR szString, RECT Size, HWND hwnd, int index)
 		firsttime = FALSE;
 	}
 	RECT marksrect = { 0 };
-	GetWindowRect(GetParent(hwnd), &marksrect);
+	GetWindowRectSafe(SafeGetParent(hwnd), &marksrect);
 	HWND hwndButtonmk;
 	if (index == 0)
 		Size.left=Size.left - Size.right/2;
@@ -247,9 +253,9 @@ HWND CreateButtonMk(LPWSTR szString, RECT Size, HWND hwnd, int index)
 		Size.left = Size.left - Size.right / 2;
 	}
 	//positioning here doesnt matter, we will do it right at WM_MOVE.
-	hwndButtonmk = CreateWindow(TEXT("Button class mk"), szString, WS_VISIBLE | WS_CHILD | WS_TABSTOP | BS_DEFPUSHBUTTON | BS_TEXT | BS_CENTER, 0, 0, Size.right * 2, Size.bottom, hwnd, NULL, (HINSTANCE)GetWindowLongPtr(hwnd, GWLP_HINSTANCE), NULL);
+	hwndButtonmk = CreateWindow(TEXT("Button class mk"), szString, WS_VISIBLE | WS_CHILD | WS_TABSTOP | BS_DEFPUSHBUTTON | BS_TEXT | BS_CENTER, 0, 0, Size.right * 2, Size.bottom, hwnd, NULL, (HINSTANCE)SafeGetWindowLongPtr(hwnd, GWLP_HINSTANCE), NULL);
 	RECT shutup = { 0 };
-	GetWindowRect(hwndButtonmk, &shutup);
+	GetWindowRectSafe(hwndButtonmk, &shutup);
 	Button_Enable(hwndButtonmk, TRUE);
 	Button_SetText(hwndButtonmk, szString);
 	SetWindowLongPtr(hwndButtonmk, GWLP_USERDATA, index);
@@ -264,11 +270,10 @@ HWND CreateButtonMk(LPWSTR szString, RECT Size, HWND hwnd, int index)
 
 LRESULT CALLBACK ButtonProcMk(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	static BOOL flag56 = TRUE;
 	PAINTSTRUCT ps = { 0 };
 	HDC hdc = NULL;
 	RECT daterectn = { 0 };
-	int WindowIndex = (int)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+	int WindowIndex = (int)SafeGetWindowLongPtr(hwnd, GWLP_USERDATA);
 	int static Walkamount = 0, step = 0;
 	int xr, yr;
 	WPARAM indexselected = 0;
@@ -283,13 +288,15 @@ LRESULT CALLBACK ButtonProcMk(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPa
 	{
 	case WM_PAINT:
 		hdc = BeginPaint(hwnd, &ps);
+		if (hdc == NULL)
+			CrashDumpFunction(90, 0);
 		HDC memdc = { 0 };
-		HBRUSH hBrush = CreateSolidBrush(RGB(222, 255, 255));
+		HBRUSH hBrush = SafetCreateSolidBrush(RGB(222, 255, 255));
 		assert(hBrush != INVALID_HANDLE_VALUE);
-		FillRect(hdc, &ps.rcPaint, hBrush);
-		GetClientRect(hwnd, &LocalRect);
+		SafeFillRect(hdc, &ps.rcPaint, hBrush);
+		SafetGetClientRect(hwnd, &LocalRect);
 		Walkamount = LocalRect.bottom / 100;
-		DeleteObject(hBrush);
+		SafeDeleteObject(hBrush);
 		int k = 0;
 		if (WindowIndex == 0)//shapes window
 		{
@@ -300,24 +307,29 @@ LRESULT CALLBACK ButtonProcMk(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPa
 					//LocalRect.right = LocalRect.right / 2;
 					LocalRect.left = LocalRect.right / 2;
 				}
-				SetStretchBltMode(hdc, HALFTONE);
+				if(0==SetStretchBltMode(hdc, HALFTONE))
+					CrashDumpFunction(2421, 0);
 				SetBrushOrgEx(hdc, 0, 0, NULL);
 				memdc = CreateCompatibleDC(hdc);
 				assert(memdc != INVALID_HANDLE_VALUE);
-				SelectObject(memdc, MyBitmapsArray[i]);
-				hBrush = CreateSolidBrush(RGB(0, 100, 255));
+				SafeSelectObject(memdc, MyBitmapsArray[i]);
+				hBrush = SafetCreateSolidBrush(RGB(0, 100, 255));
 				int g = 0;
 				BITMAP mybitmap = { 0 };
 				g = GetObject(MyBitmapsArray[i], sizeof(BITMAP), &mybitmap);
+				if (g == 0)
+					CrashDumpFunction(6677, 0);
 				g = StretchBlt(hdc, LocalRect.left, k * Walkamount, LocalRect.right/2, Walkamount, memdc, 0, 0, mybitmap.bmWidth, mybitmap.bmHeight, SRCCOPY);
+				if (g == 0)
+					CrashDumpFunction(6678, 0);
 				RECT temprect69 = { 0 };
 				temprect69.left = LocalRect.left;
 				temprect69.top = k * Walkamount;
 				temprect69.right = LocalRect.right;
 				temprect69.bottom = Walkamount + k * Walkamount;
-				FrameRect(hdc, &temprect69, hBrush);
-				DeleteObject(hBrush);
-				DeleteObject(memdc);
+				SafeFrameRect(hdc, &temprect69, hBrush);
+				SafeDeleteObject(hBrush);
+				SafeDeleteObject(memdc);
 				if (i % 2 != 0)
 				{
 					//LocalRect.right = LocalRect.right * 2;
@@ -339,11 +351,11 @@ LRESULT CALLBACK ButtonProcMk(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPa
 					LocalRect.left = LocalRect.right / 2;
 					LocalRect.right += LocalRect.left;
 				}
-				hBrush = CreateSolidBrush(ColorSelection[i]);
+				hBrush = SafetCreateSolidBrush(ColorSelection[i]);
 				assert(hBrush != INVALID_HANDLE_VALUE);
-				FillRect(hdc, &LocalRect, hBrush);
+				SafeFillRect(hdc, &LocalRect, hBrush);
 				LocalRect.right -= LocalRect.left;
-				DeleteObject(hBrush);
+				SafeDeleteObject(hBrush);
 				if (i % 2 != 0)
 				{
 					LocalRect.left = 0;
@@ -353,35 +365,41 @@ LRESULT CALLBACK ButtonProcMk(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPa
 		}
 		if (WindowIndex == 2)//Buttons bar
 			DataUpdateRect = ButtonsBarFunction(LocalRect, hdc, hwnd, &step, DataUpdateRect);
-		EndPaint(hwnd, &ps);
+		(void)EndPaint(hwnd, &ps);
 		return 0;
 	case TIMEUPDATE://timeupdateloop
-		hdc = GetDC(hwnd);
+		hdc = safeGetDC(hwnd);
 		GetSystemTime(&sTime);
 		SystemTimeToTzSpecificLocalTime(NULL, &sTime, &sTime);
-		GetClientRect(hwnd, &LocalRect);
+		SafetGetClientRect(hwnd, &LocalRect);
 		LocalRect.bottom = LocalRect.bottom / 10/4;
-		hBrush = CreateSolidBrush(RGB(40, 40, 40));
+		hBrush = SafetCreateSolidBrush(RGB(40, 40, 40));
 		assert(hBrush != INVALID_HANDLE_VALUE);
-		FillRect(hdc, &LocalRect, hBrush);
-		DeleteObject(hBrush);
+		SafeFillRect(hdc, &LocalRect, hBrush);
+		SafeDeleteObject(hBrush);
 		char mytimedata[1000] = { 0 };
-		sprintf_s(mytimedata, 1000, " Year: %u\n Month: %u\n Day: %u\n Hour: %u\n Minute: %u\n Second: %u\n Milisecond: %u", sTime.wYear, sTime.wMonth, sTime.wDay, sTime.wHour, sTime.wMinute, sTime.wSecond, sTime.wMilliseconds);
-		SetBkColor(hdc, RGB(40, 40, 40));
-		SetTextColor(hdc, RGB(150, 150, 150));
+		if(-1==sprintf_s(mytimedata, 1000, " Year: %u\n Month: %u\n Day: %u\n Hour: %u\n Minute: %u\n Second: %u\n Milisecond: %u", sTime.wYear, sTime.wMonth, sTime.wDay, sTime.wHour, sTime.wMinute, sTime.wSecond, sTime.wMilliseconds))
+		{
+			CrashDumpFunction(50, 0);
+		}
+		SafeSetBkColor(hdc, RGB(40, 40, 40));
+		SafeSetTextColor(hdc, RGB(150, 150, 150));
 		assert(mytimedata != NULL);
 		DrawTextA(hdc, mytimedata, -1, &LocalRect, DT_TOP | DT_LEFT);
-		ReleaseDC(hwnd, hdc);
+		SafeReleaseDC(hwnd, hdc);
 		return 0;
 	case DATEUPDATETICK:
-		hdc = GetDC(hwnd);
+		hdc = safeGetDC(hwnd);
 		char  memdata[1000] = { 0 };
 		memset(memdata, 0, sizeof(char) * 1000);
-		hBrush = CreateSolidBrush(RGB(200, 120, 80));
+		hBrush = SafetCreateSolidBrush(RGB(200, 120, 80));
 		assert(hBrush != INVALID_HANDLE_VALUE);
-		FillRect(hdc, &DataUpdateRect, hBrush);
-		DeleteObject(hBrush);
-		sprintf_s(memdata, 1000, "remaining: \n%zu ", TextHeapRemaining);
+		SafeFillRect(hdc, &DataUpdateRect, hBrush);
+		SafeDeleteObject(hBrush);
+		if(-1==sprintf_s(memdata, 1000, "remaining: \n%zu ", TextHeapRemaining))
+		{
+			CrashDumpFunction(50, 0);
+		}
 		DrawTextA(hdc, memdata, -1, &DataUpdateRect, DT_LEFT);
 		//Data remaining
 		memset(memdata, 0, sizeof(char) * 1000);
@@ -389,19 +407,22 @@ LRESULT CALLBACK ButtonProcMk(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPa
 		LocalRect.bottom = DataUpdateRect.bottom + step + step / 2;
 		LocalRect.left = DataUpdateRect.left;
 		LocalRect.right = DataUpdateRect.right;
-		hBrush = CreateSolidBrush(RGB(33, 200, 3));
+		hBrush = SafetCreateSolidBrush(RGB(33, 200, 3));
 		assert(hBrush != INVALID_HANDLE_VALUE);
-		FillRect(hdc, &LocalRect, hBrush);
-		DeleteObject(hBrush);
-		sprintf_s(memdata, 1000, "avalible: \n%lld", pchinputbuffermemory);
+		SafeFillRect(hdc, &LocalRect, hBrush);
+		SafeDeleteObject(hBrush);
+		if(-1==sprintf_s(memdata, 1000, "avalible: \n%lld", pchinputbuffermemory))
+		{
+			CrashDumpFunction(50, 0);
+		}
 		DrawTextA(hdc, memdata, -1, &LocalRect, DT_LEFT);
-		ReleaseDC(hwnd, hdc);
+		SafeReleaseDC(hwnd, hdc);
 		return 0;
 	case WM_LBUTTONDOWN:
 		xr = LOWORD(lParam);
 		yr = HIWORD(lParam);
 		assert(buttondates != NULL);
-		GetClientRect(buttondates[0], &daterectn);
+		SafetGetClientRect(buttondates[0], &daterectn);
 		indexselected = 0;
 		if (yr > daterectn.bottom)
 			indexselected = (WPARAM)((yr / daterectn.bottom) * 2);
@@ -410,15 +431,15 @@ LRESULT CALLBACK ButtonProcMk(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPa
 		if (WindowIndex == 0)//shapes signaling
 		{
 			indexselected += (WPARAM)(scrollamount[WindowIndex] * 2 + 1);
-			SendMessage(DatesHwnd, MARK_SIGNAL, selecteddate, indexselected);
+			(void)SendMessage(DatesHwnd, MARK_SIGNAL, selecteddate, indexselected);
 		}
 		if (WindowIndex == 1)//color signaling
 		{
 			indexselected += (WPARAM)(scrollamount[WindowIndex] * 2);
 			WPARAM paramy = 0;
-			GetClientRect(hwnd, &LocalRect);
+			SafetGetClientRect(hwnd, &LocalRect);
 			paramy = selecteddate + ((IDCOLORS+indexselected) << 24);
-			SendMessage(DatesHwnd, MARK_SIGNAL, paramy, 0);
+			(void)SendMessage(DatesHwnd, MARK_SIGNAL, paramy, 0);
 		}
 		if (WindowIndex == 2)//buttons cool shit!
 		{
@@ -429,7 +450,7 @@ LRESULT CALLBACK ButtonProcMk(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPa
 		xr = LOWORD(lParam);
 		yr = HIWORD(lParam);
 		assert(buttondates != NULL);
-		GetClientRect(buttondates[0], &daterectn);
+		SafetGetClientRect(buttondates[0], &daterectn);
 		if (yr > daterectn.bottom)
 		{
 			indexselected = (WPARAM)((yr / daterectn.bottom) * 2);
@@ -442,11 +463,11 @@ LRESULT CALLBACK ButtonProcMk(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPa
 		}
 		if (WindowIndex == 1)//color change
 		{
-			GetClientRect(hwnd, &LocalRect);
+			SafetGetClientRect(hwnd, &LocalRect);
 			COLORREF selectedcolor = { 0 };
 			CHOOSECOLORA colordlg = {
 			colordlg.lStructSize = sizeof(CHOOSECOLOR),
-			colordlg.hwndOwner = GetParent(DatesHwnd),
+			colordlg.hwndOwner = SafeGetParent(DatesHwnd),
 			colordlg.hInstance = (HWND)GetModuleHandle(NULL),
 			colordlg.rgbResult = selectedcolor,
 			colordlg.lpCustColors = (void*)colorspointer,
@@ -468,7 +489,10 @@ LRESULT CALLBACK ButtonProcMk(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPa
 			realindex = (int)indexselected + 1;
 			HANDLE hFile = { 0 };
 			char tempstring[1000] = { 0 };
-			sprintf_s(tempstring, 1000, "%sRGBData.txt", theworkingdirectory);
+			if(-1==sprintf_s(tempstring, 1000, "%sRGBData.txt", theworkingdirectory))
+			{
+				CrashDumpFunction(50, 0);
+			}
 			hFile = CreateFileA(tempstring, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 			if (hFile == 0)
 			{
@@ -476,14 +500,19 @@ LRESULT CALLBACK ButtonProcMk(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPa
 				return 0;
 			}
 			int filesize = GetFileSize(hFile, NULL);
+			if (filesize == INVALID_FILE_SIZE)
+			{
+				CrashDumpFunction(106, 0);
+			}
 			OVERLAPPED overlapstruct = { 0 };
 			char* filebuffer = SafeCalloc(  (size_t)(filesize + 1),    sizeof(char));
-			bool fag = ReadFile(hFile, filebuffer, filesize, NULL, &overlapstruct);
-			if (fag == 0) CrashDumpFunction(120,0);
+			bool boolflag1 = ReadFile(hFile, filebuffer, filesize, NULL, &overlapstruct);
+			if (boolflag1 == 0) 
+				CrashDumpFunction(120,0);
 			//append the data update to rgbdata
 			RGBDatatxtUpdate(filebuffer, realindex, selectedcolor, filesize, hFile, overlapstruct);
-			InvalidateRect(GetParent(TextBoxHwnd), NULL, TRUE);
-			UpdateWindow(TextBoxHwnd);
+			InvalidateRectSafe(SafeGetParent(TextBoxHwnd), NULL, TRUE);
+			UpdateWindowSafe(TextBoxHwnd);
 		}
 		return 0;
 	case WM_MOUSEWHEEL:
@@ -497,12 +526,12 @@ LRESULT CALLBACK ButtonProcMk(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPa
 		{
 			scrollamount[WindowIndex]++;
 		}
-		InvalidateRect(hwnd, NULL, TRUE);
-		UpdateWindow(hwnd);
+		InvalidateRectSafe(hwnd, NULL, TRUE);
+		UpdateWindowSafe(hwnd);
 		return 0;
 	case WM_DESTROY:
 		assert(localfont != NULL);
-		DeleteObject(localfont);
+		SafeDeleteObject(localfont);
 		return DestroyButton(hwnd);
 	}
 	return DefWindowProc(hwnd, message, wParam, lParam);
@@ -519,14 +548,12 @@ LRESULT CALLBACK TempBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 {
 	//GlobalIndex = 1 means year, 2 means month, 3 means day
 	HDC hdc = { 0 };
-	static char* mindexspace = { 0 };
 	char static numberarray[100] = { 0 };
-	int static cxChar = 0, cxCaps = 0, cyChar = 0, index = 0;
+	int static index = 0;
 	int * GlobalIndexptr = 0;
 	int datedate = 0;
 	static int GlobalIndex = 0;
 	CREATESTRUCTA * ca = { 0 };
-	TEXTMETRIC tm = { 0 };
 	static RECT boxsize = { 0 };
 	RECT parentclient = { 0 };
 	PAINTSTRUCT ps = { 0 };
@@ -536,40 +563,35 @@ LRESULT CALLBACK TempBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 	switch (message)
 	{
 	case WM_CREATE:
-		mindexspace = SafeCalloc(  yearrange,    sizeof(char));
 		ca = (CREATESTRUCTA*)lParam;
 		assert(ca != NULL);
 		GlobalIndexptr = (int*)ca->lpCreateParams;
 		GlobalIndex = GlobalIndexptr[0];
-		hdc = GetDC(hwnd);
-		GetTextMetrics(hdc, &tm);
-		cxChar = tm.tmAveCharWidth;
-		cxCaps = (tm.tmPitchAndFamily & 1 ? 3 : 2) * cxChar / 2;
-		cyChar = tm.tmHeight + tm.tmExternalLeading;
 		SIZE sizeextent = { 0 };
 		memset(numberarray, 0, sizeof(char) * 100);
 		index = 0;
-		ReleaseDC(hwnd, hdc);
 		return 0;
 	case WM_SIZE:
-		GetClientRect(hwnd, &boxsize);
+		SafetGetClientRect(hwnd, &boxsize);
 		return 0;
 	case WM_PAINT:
 		hdc = BeginPaint(hwnd, &ps);
-		GetClientRect(GetParent(DatesHwnd), &dcRectP);
-		paintDCp = GetDC(GetParent(DatesHwnd));
+		if (hdc == NULL)
+			CrashDumpFunction(90, 0);
+		SafetGetClientRect(SafeGetParent(DatesHwnd), &dcRectP);
+		paintDCp = safeGetDC(SafeGetParent(DatesHwnd));
 		assert(paintDCp != NULL);
-		TextOutA(paintDCp, dcRectP.right / 2, dcRectP.bottom / 2, "Press Enter for change to take effect", 38);
-		ReleaseDC(GetParent(DatesHwnd), paintDCp);
+		SafeTextOutA(paintDCp, dcRectP.right / 2, dcRectP.bottom / 2, "Press Enter for change to take effect", 38);
+		SafeReleaseDC(SafeGetParent(DatesHwnd), paintDCp);
 		SelectFont(hdc, localfont);
-		SetBkColor(hdc, RGB(150, 150, 150));
-		SetTextColor(hdc, RGB(0, 0, 255));
-		commonbrush = CreateSolidBrush(RGB(10, 22, 70));
+		SafeSetBkColor(hdc, RGB(150, 150, 150));
+		SafeSetTextColor(hdc, RGB(0, 0, 255));
+		commonbrush = SafetCreateSolidBrush(RGB(10, 22, 70));
 		assert(commonbrush != INVALID_HANDLE_VALUE);
-		FillRect(hdc, &boxsize, commonbrush);
-		TextOutA(hdc, 0, 0, numberarray, 100);
-		DeleteObject(commonbrush);
-		EndPaint(hwnd, &ps);
+		SafeFillRect(hdc, &boxsize, commonbrush);
+		SafeTextOutA(hdc, 0, 0, numberarray, 100);
+		SafeDeleteObject(commonbrush);
+		(void)EndPaint(hwnd, &ps);
 		return 0;
 	case WM_KEYDOWN:
 		assert(numberarray != NULL);
@@ -586,19 +608,19 @@ LRESULT CALLBACK TempBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 		}
 		if (wParam == VK_RETURN)
 		{
-			SetFocus(GetParent(hwnd));
+			SafeSetFocus(SafeGetParent(hwnd));
 			return 0;
 		}
-		hdc = GetDC(hwnd);
+		hdc = safeGetDC(hwnd);
 		SelectFont(hdc, localfont);
 		GetTextExtentPoint32A(hdc, numberarray + index, (int)strlen(numberarray + index), &sizeextent);
 		boxsize.right += sizeextent.cx;
-		ReleaseDC(hwnd, hdc);
+		SafeReleaseDC(hwnd, hdc);
 		CopyRect(&parentclient, &boxsize);
-		MapWindowPoints(hwnd, GetParent(hwnd), (LPPOINT)&parentclient, 2);
-		MoveWindow(hwnd, parentclient.left, parentclient.top, parentclient.right - parentclient.left, parentclient.bottom - parentclient.top, FALSE);
-		InvalidateRect(hwnd, NULL, TRUE);
-		UpdateWindow(hwnd);
+		MapWindowPointsSafe(hwnd, SafeGetParent(hwnd), (LPPOINT)&parentclient, 2);
+		MoveWindowSafe(hwnd, parentclient.left, parentclient.top, parentclient.right - parentclient.left, parentclient.bottom - parentclient.top, FALSE);
+		InvalidateRectSafe(hwnd, NULL, TRUE);
+		UpdateWindowSafe(hwnd);
 		return 0;
 	case WM_KILLFOCUS://apply change
 		assert(selecteddate >= 0);
@@ -624,7 +646,7 @@ LRESULT CALLBACK TempBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 				{
 					SetWindowLongPtr(buttonarray[i], GWLP_USERDATA, zerothwindowpos);
 				}
-				SendMessageA(buttonarray[hwndfornewmyindex], WM_LBUTTONDOWN, 0, 0);//update everything
+				(void)SendMessageA(buttonarray[hwndfornewmyindex], WM_LBUTTONDOWN, 0, 0);//update everything
 			}
 		}
 		if (GlobalIndex == 2)//monthchange
@@ -642,7 +664,7 @@ LRESULT CALLBACK TempBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 				{
 					SetWindowLongPtr(buttonarray[i], GWLP_USERDATA, zerothwindowpos);
 				}
-				SendMessageA(buttonarray[month], WM_LBUTTONDOWN, 0, 0);//update everything
+				(void)SendMessageA(buttonarray[month], WM_LBUTTONDOWN, 0, 0);//update everything
 			}
 		}
 		if (GlobalIndex == 3)//daychange
@@ -654,11 +676,11 @@ LRESULT CALLBACK TempBoxProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 			{
 				//datedate += day;
 				//selecteddate = datedate;
-				SendMessage(buttondates[day-1], WM_LBUTTONDOWN, 0, 0);
+				(void)SendMessage(buttondates[day-1], WM_LBUTTONDOWN, 0, 0);
 			}
 		}
-		InvalidateRect(GetParent(DatesHwnd), NULL, TRUE);
-		UpdateWindow(GetParent(DatesHwnd));
+		InvalidateRectSafe(SafeGetParent(DatesHwnd), NULL, TRUE);
+		UpdateWindowSafe(SafeGetParent(DatesHwnd));
 	case WM_DESTROY:
 		assert(numberarray != NULL);
 		memset(numberarray, 0, sizeof(char) * 100);
@@ -693,7 +715,7 @@ void marksfilepresent(int bithsize, HANDLE hFile)
 				colorindex = strtol(filebuffer + firstpoint, &pEnd, 10);
 				if (colorindex != i + 1)//unordered number or index failure 
 				{
-					CloseHandle(hFile);
+					SafeCloseHandle(hFile);
 					free(filebuffer);
 					CrashDumpFunction(91,0);
 					return;
@@ -708,7 +730,7 @@ void marksfilepresent(int bithsize, HANDLE hFile)
 		}
 	}
 	free(filebuffer);
-	CloseHandle(hFile);
+	SafeCloseHandle(hFile);
 	filebuffer = NULL;
 }
 
@@ -719,7 +741,7 @@ RECT buttonswindow(HWND hwnd, POINT mypt)
 	HGLOBAL clipmemory = NULL;
 	char* cliptext = NULL;
 	RECT TempRect2 = { 0 };
-	GetClientRect(hwnd, &LocalRect);
+	SafetGetClientRect(hwnd, &LocalRect);
 	//check live-date first
 	TempRect2.top = LocalRect.top;
 	TempRect2.bottom = LocalRect.bottom / 40;
@@ -729,10 +751,10 @@ RECT buttonswindow(HWND hwnd, POINT mypt)
 	if (PtInRect(&TempRect2, mypt))
 	{//if you click live date paste the live data, put live date on clipboard
 		HDC hdc = { 0 };
-		hdc = GetDC(hwnd);
+		hdc = safeGetDC(hwnd);
 		InvertRect(hdc, &TempRect2);
-		ReleaseDC(hwnd, hdc);
-		if (!(OpenClipboard(GetParent(TextBoxHwnd))))
+		SafeReleaseDC(hwnd, hdc);
+		if (!(OpenClipboard(SafeGetParent(TextBoxHwnd))))
 		{
 			CrashDumpFunction(97, 1);
 			return TempRect2;
@@ -754,19 +776,22 @@ RECT buttonswindow(HWND hwnd, POINT mypt)
 		SYSTEMTIME lTime = { 0 };
 		GetSystemTime(&lTime);
 		SystemTimeToTzSpecificLocalTime(NULL, &lTime, &lTime);
-		sprintf_s(cliptext, 1000, " Year: %u\n Month: %u\n Day: %u\n Hour: %u\n Minute: %u\n Second: %u\n Milisecond: %u", lTime.wYear, lTime.wMonth, lTime.wDay, lTime.wHour, lTime.wMinute, lTime.wSecond, lTime.wMilliseconds);
+		if(-1==sprintf_s(cliptext, 1000, " Year: %u\n Month: %u\n Day: %u\n Hour: %u\n Minute: %u\n Second: %u\n Milisecond: %u", lTime.wYear, lTime.wMonth, lTime.wDay, lTime.wHour, lTime.wMinute, lTime.wSecond, lTime.wMilliseconds))
+		{
+			CrashDumpFunction(50, 0);
+		}
 		GlobalUnlock(clipmemory);
 		SetClipboardData(CF_TEXT, clipmemory);
 		CloseClipboard();
-		GetClientRect(GetParent(hwnd), &LocalRect);
+		SafetGetClientRect(SafeGetParent(hwnd), &LocalRect);
 		assert(DatesHwnd != NULL);
-		HDC stupidhdc = GetDC(GetParent(DatesHwnd));
-		TextOutA(stupidhdc, LocalRect.right / 2, LocalRect.top / 2, "Copied Live Time!", 18);
-		ReleaseDC(GetParent(DatesHwnd), stupidhdc);
+		HDC stupidhdc = safeGetDC(SafeGetParent(DatesHwnd));
+		SafeTextOutA(stupidhdc, LocalRect.right / 2, LocalRect.top / 2, "Copied Live Time!", 18);
+		SafeReleaseDC(SafeGetParent(DatesHwnd), stupidhdc);
 		puskawetathr = GetLastError();
 		
-		InvalidateRect(hwnd, &TempRect2, TRUE);
-		UpdateWindow(hwnd);
+		InvalidateRectSafe(hwnd, &TempRect2, TRUE);
+		UpdateWindowSafe(hwnd);
 		return TempRect2;
 	}
 	return TempRect2;
@@ -777,10 +802,10 @@ void DatesChangeWindow(HWND hwnd, POINT mypt, RECT TempRect2)
 	assert(hwnd != NULL);
 	char tempbuffer10[100] = { 0 };
 	TEXTMETRIC mtm = { 0 };
-	HDC hdc = GetDC(hwnd);
+	HDC hdc = safeGetDC(hwnd);
 	SelectFont(hdc, localfont);
 	GetTextMetrics(hdc, &mtm);
-	ReleaseDC(hwnd, hdc);
+	SafeReleaseDC(hwnd, hdc);
 	int cyChar = mtm.tmHeight + mtm.tmExternalLeading;
 	SIZE sizeextent = { 0 };
 	WNDCLASSEX Tempclass =
@@ -806,51 +831,60 @@ void DatesChangeWindow(HWND hwnd, POINT mypt, RECT TempRect2)
 	int val = 0;
 	if (PtInRect(&TempRect2, mypt))
 	{//Year
-		sprintf_s(tempbuffer10, 100, "Year: ");
+		if(-1==sprintf_s(tempbuffer10, 100, "Year: "))
+		{
+			CrashDumpFunction(50, 0);
+		}
 
-		hdc = GetDC(hwnd);
+		hdc = safeGetDC(hwnd);
 		SelectFont(hdc, localfont);
 		GetTextExtentPoint32A(hdc, tempbuffer10, 6, &sizeextent);
-		ReleaseDC(hwnd, hdc);
+		SafeReleaseDC(hwnd, hdc);
 		val = 1;
 		tempwindow = CreateWindowExA(0,"Tempclass", "TempBox", WS_CHILD | WS_VISIBLE, sizeextent.cx, TempRect2.top, sizeextent.cx, sizeextent.cy, hwnd, NULL, NULL, &val);
 		assert(tempwindow != NULL);
-		ShowWindow(tempwindow, SW_SHOW);
-		UpdateWindow(tempwindow);
-		SetFocus(tempwindow);
+		(void)ShowWindow(tempwindow, SW_SHOW);
+		UpdateWindowSafe(tempwindow);
+		SafeSetFocus(tempwindow);
 	}
 	TempRect2.top += testvar * 2;
 	TempRect2.bottom += testvar * 2;
 	if (PtInRect(&TempRect2, mypt))
 	{//Month
-		sprintf_s(tempbuffer10, 100, "Month: ");
-		hdc = GetDC(hwnd);
+		if(-1==sprintf_s(tempbuffer10, 100, "Month: "))
+		{
+			CrashDumpFunction(50, 0);
+		}
+		hdc = safeGetDC(hwnd);
 		SelectFont(hdc, localfont);
 		GetTextExtentPoint32A(hdc, tempbuffer10, 7, &sizeextent);
-		ReleaseDC(hwnd, hdc);
+		SafeReleaseDC(hwnd, hdc);
 		val = 2;
 		tempwindow = CreateWindowExA(0, "Tempclass", "TempBox", WS_CHILD | WS_VISIBLE, sizeextent.cx, TempRect2.top, sizeextent.cx, sizeextent.cy, hwnd, NULL, NULL, &val);
 		assert(tempwindow != NULL);
-		ShowWindow(tempwindow, SW_SHOW);
-		UpdateWindow(tempwindow);
-		SetFocus(tempwindow);
+		(void)ShowWindow(tempwindow, SW_SHOW);
+		UpdateWindowSafe(tempwindow);
+		SafeSetFocus(tempwindow);
 	}
 	//Date
 	TempRect2.top += testvar * 2;
 	TempRect2.bottom += testvar * 2;
 	if (PtInRect(&TempRect2, mypt))
 	{
-		sprintf_s(tempbuffer10, 100, "Day: ");
-		hdc = GetDC(hwnd);
+		if(-1==sprintf_s(tempbuffer10, 100, "Day: "))
+		{
+			CrashDumpFunction(50, 0);
+		}
+		hdc = safeGetDC(hwnd);
 		SelectFont(hdc, localfont);
 		GetTextExtentPoint32A(hdc, tempbuffer10, 5, &sizeextent);
-		ReleaseDC(hwnd, hdc);
+		SafeReleaseDC(hwnd, hdc);
 		val = 3;
 		tempwindow = CreateWindowExA(0, "Tempclass", "TempBox", WS_CHILD | WS_VISIBLE, sizeextent.cx, TempRect2.top, sizeextent.cx, sizeextent.cy, hwnd, NULL, NULL, &val);
 		assert(tempwindow != NULL);
-		ShowWindow(tempwindow, SW_SHOW);
-		UpdateWindow(tempwindow);
-		SetFocus(tempwindow);
+		(void)ShowWindow(tempwindow, SW_SHOW);
+		UpdateWindowSafe(tempwindow);
+		SafeSetFocus(tempwindow);
 	}
 }
 
@@ -892,7 +926,10 @@ void ShapesChangeButton(int indexselected, HWND hwnd)
 		currentdirectory[i] = '\0';
 		offset = i;
 	}
-	sprintf_s(currentdirectory + offset, (size_t)(1000 - offset), "%i.bmp", indexselected);
+	if(-1==sprintf_s(currentdirectory + offset, (size_t)(1000 - offset), "%i.bmp", indexselected))
+	{
+		CrashDumpFunction(50, 0);
+	}
 	assert(currentdirectory != NULL);
 	CopyFileA(filenamestring, currentdirectory, FALSE);
 	HANDLE BitmapHandle = { 0 };
@@ -901,8 +938,8 @@ void ShapesChangeButton(int indexselected, HWND hwnd)
 	{
 		MyBitmapsArray[indexselected] = BitmapHandle;
 	}
-	InvalidateRect(GetParent(TextBoxHwnd), NULL, TRUE);
-	UpdateWindow(TextBoxHwnd);
+	InvalidateRectSafe(SafeGetParent(TextBoxHwnd), NULL, TRUE);
+	UpdateWindowSafe(TextBoxHwnd);
 }
 
 void RGBDatatxtUpdate(char * filebuffer, int realindex, int selectedcolor, int filesize, HANDLE hFile, OVERLAPPED overlapstruct)
@@ -954,7 +991,7 @@ void RGBDatatxtUpdate(char * filebuffer, int realindex, int selectedcolor, int f
 					temppoint = realloc(filebuffer, (size_t)(filesize + totaldifference + 10) * sizeof(char));
 					if (temppoint == NULL)
 					{
-						CloseHandle(hFile);
+						SafeCloseHandle(hFile);
 						CrashDumpFunction(110, 1);
 						return;
 					}
@@ -968,15 +1005,18 @@ void RGBDatatxtUpdate(char * filebuffer, int realindex, int selectedcolor, int f
 				int cancertetard = 0;
 				if (totaldifference > 0)
 					cancertetard = totaldifference;
-				sprintf_s(filebuffer + i, (size_t)(lognewnumber + 1), "%d", selectedcolor);
+				if(-1==sprintf_s(filebuffer + i, (size_t)(lognewnumber + 1), "%d", selectedcolor))
+				{
+					CrashDumpFunction(50, 0);
+				}
 				assert(lognewnumber + i <= 0);
 				filebuffer[lognewnumber + i] = '|';//to replace the impotent null thanks to sprintf
 				overlapstruct.Offset = i;
 #pragma warning(push)
 #pragma warning(disable: 6001)
 				if (hFile == INVALID_HANDLE_VALUE) return;
-				WriteFile(hFile, filebuffer + i, filesize - i + totaldifference, NULL, &overlapstruct);
-				CloseHandle(hFile);
+				SafewriteFile(hFile, filebuffer + i, filesize - i + totaldifference, NULL, &overlapstruct);
+				SafeCloseHandle(hFile);
 #pragma warning(pop)
 				free(filebuffer);
 				i = filesize;//to quit the loop.
@@ -993,28 +1033,31 @@ RECT ButtonsBarFunction(RECT LocalRect, HDC hdc, HWND hwnd, int * step, RECT Dat
 	SYSTEMTIME sTime = { 0 };
 	HBRUSH hBrush = { 0 };
 	RECT TempRect = { 0 };
-	HBRUSH frameBrush = CreateSolidBrush(RGB(0, 255, 255));
+	HBRUSH frameBrush = SafetCreateSolidBrush(RGB(0, 255, 255));
 	TempRect.top = LocalRect.top;
 	TempRect.bottom = LocalRect.bottom / 10;
 	TempRect.left = LocalRect.left;
 	TempRect.right = LocalRect.right;
-	hBrush = CreateSolidBrush(RGB(100, 100, 100));
-	FillRect(hdc, &TempRect, hBrush);
-	DeleteObject(hBrush);
+	hBrush = SafetCreateSolidBrush(RGB(100, 100, 100));
+	SafeFillRect(hdc, &TempRect, hBrush);
+	SafeDeleteObject(hBrush);
 
 	//Live Date presented
 	GetSystemTime(&sTime);
 	SystemTimeToTzSpecificLocalTime(NULL, &sTime, &sTime);
 	TempRect.bottom = TempRect.bottom / 4;
-	hBrush = CreateSolidBrush(RGB(40, 40, 40));
-	FillRect(hdc, &TempRect, hBrush);
-	DeleteObject(hBrush);
+	hBrush = SafetCreateSolidBrush(RGB(40, 40, 40));
+	SafeFillRect(hdc, &TempRect, hBrush);
+	SafeDeleteObject(hBrush);
 	char mytimedata[1000] = { 0 };
-	sprintf_s(mytimedata, 1000, " Year: %u\n Month: %u\n Day: %u\n Hour: %u\n Minute: %u\n Second: %u\n Milisecond: %u", sTime.wYear, sTime.wMonth, sTime.wDay, sTime.wHour, sTime.wMinute, sTime.wSecond, sTime.wMilliseconds);
-	SetBkColor(hdc, RGB(40, 40, 40));
-	SetTextColor(hdc, RGB(150, 150, 150));
+	if(-1==sprintf_s(mytimedata, 1000, " Year: %u\n Month: %u\n Day: %u\n Hour: %u\n Minute: %u\n Second: %u\n Milisecond: %u", sTime.wYear, sTime.wMonth, sTime.wDay, sTime.wHour, sTime.wMinute, sTime.wSecond, sTime.wMilliseconds))
+	{
+		CrashDumpFunction(50, 0);
+	}
+	SafeSetBkColor(hdc, RGB(40, 40, 40));
+	SafeSetTextColor(hdc, RGB(150, 150, 150));
 	DrawTextA(hdc, mytimedata, -1, &TempRect, DT_TOP | DT_LEFT);
-	FrameRect(hdc, &TempRect, frameBrush);
+	SafeFrameRect(hdc, &TempRect, frameBrush);
 	if (staticbool2 == TRUE)
 	{
 		SetTimer(hwnd, 1, USER_TIMER_MINIMUM / 10, Timerproc);
@@ -1025,22 +1068,25 @@ RECT ButtonsBarFunction(RECT LocalRect, HDC hdc, HWND hwnd, int * step, RECT Dat
 	memset(mytimedata, 0, sizeof(char) * 1000);
 	TempRect.top = TempRect.bottom;
 	TempRect.bottom = TempRect.bottom * 2;
-	SetBkColor(hdc, RGB(150, 150, 150));
-	SetTextColor(hdc, RGB(0, 0, 255));
+	SafeSetBkColor(hdc, RGB(150, 150, 150));
+	SafeSetTextColor(hdc, RGB(0, 0, 255));
 	SaveDC(hdc);
 	localfont = CreateFontA(0, TempRect.bottom / 30, 0, 0, FW_REGULAR, TRUE, FALSE, FALSE, ANSI_CHARSET, OUT_CHARACTER_PRECIS, CLIP_TT_ALWAYS, PROOF_QUALITY, FIXED_PITCH, NULL);
 	assert(localfont != NULL);
-	SelectObject(hdc, localfont);
-	hBrush = CreateSolidBrush(RGB(150, 150, 150));
-	FillRect(hdc, &TempRect, hBrush);
-	DeleteObject(hBrush);
+	SafeSelectObject(hdc, localfont);
+	hBrush = SafetCreateSolidBrush(RGB(150, 150, 150));
+	SafeFillRect(hdc, &TempRect, hBrush);
+	SafeDeleteObject(hBrush);
 	int datedate = selecteddate;
 	int year = datedate >> 11;
 	int month = (datedate & 0x780) >> 7;
 	int day = (datedate & 0x7F);
-	sprintf_s(mytimedata, 1000, "Day Selected:\nYear: %i\n\nMonth: %i\n\nDay: %i", year, month, day);
+	if(-1==sprintf_s(mytimedata, 1000, "Day Selected:\nYear: %i\n\nMonth: %i\n\nDay: %i", year, month, day))
+	{
+		CrashDumpFunction(50, 0);
+	}
 	DrawTextA(hdc, mytimedata, -1, &TempRect, DT_LEFT);
-	FrameRect(hdc, &TempRect, frameBrush);
+	SafeFrameRect(hdc, &TempRect, frameBrush);
 	RestoreDC(hdc, -1);
 
 	DataUpdateRect = ButtonsDataWipeandBelow(mytimedata, LocalRect, TempRect, hdc, frameBrush, step, DataUpdateRect);
@@ -1057,39 +1103,48 @@ RECT ButtonsDataWipeandBelow(char * mytimedata, RECT LocalRect, RECT TempRect, H
 	memset(mytimedata, 0, sizeof(char) * 1000);
 	TempRect.top = TempRect.bottom;
 	TempRect.bottom = LocalRect.bottom / 17;
-	hBrush = CreateSolidBrush(RGB(200, 20, 80));
-	FillRect(hdc, &TempRect, hBrush);
-	DeleteObject(hBrush);
-	sprintf_s(mytimedata, 1000, "\nData Wipe");
-	SetBkColor(hdc, RGB(200, 20, 80));
-	SetTextColor(hdc, RGB(5, 20, 80));
+	hBrush = SafetCreateSolidBrush(RGB(200, 20, 80));
+	SafeFillRect(hdc, &TempRect, hBrush);
+	SafeDeleteObject(hBrush);
+	if(-1==sprintf_s(mytimedata, 1000, "\nData Wipe"))
+	{
+		CrashDumpFunction(50, 0);
+	}
+	SafeSetBkColor(hdc, RGB(200, 20, 80));
+	SafeSetTextColor(hdc, RGB(5, 20, 80));
 	DrawTextA(hdc, mytimedata, -1, &TempRect, DT_CENTER | DT_LEFT);
-	FrameRect(hdc, &TempRect, frameBrush);
+	SafeFrameRect(hdc, &TempRect, frameBrush);
 	*step = TempRect.bottom - TempRect.top;
 	//WordWrap
 	memset(mytimedata, 0, sizeof(char) * 1000);
 	TempRect.top = TempRect.bottom;
 	TempRect.bottom = LocalRect.bottom;
-	hBrush = CreateSolidBrush(RGB(5, 20, 80));
-	FillRect(hdc, &TempRect, hBrush);
-	DeleteObject(hBrush);
-	sprintf_s(mytimedata, 1000, "\nWord Wrap");
-	SetBkColor(hdc, RGB(5, 20, 80));
-	SetTextColor(hdc, RGB(0, 255, 0));
+	hBrush = SafetCreateSolidBrush(RGB(5, 20, 80));
+	SafeFillRect(hdc, &TempRect, hBrush);
+	SafeDeleteObject(hBrush);
+	if(-1==sprintf_s(mytimedata, 1000, "\nWord Wrap"))
+	{
+		CrashDumpFunction(50, 0);
+	}
+	SafeSetBkColor(hdc, RGB(5, 20, 80));
+	SafeSetTextColor(hdc, RGB(0, 255, 0));
 	DrawTextA(hdc, mytimedata, -1, &TempRect, DT_CENTER | DT_LEFT);
-	FrameRect(hdc, &TempRect, frameBrush);
+	SafeFrameRect(hdc, &TempRect, frameBrush);
 	//Save
 	memset(mytimedata, 0, sizeof(char) * 1000);
 	TempRect.top += *step;
 	TempRect.bottom += *step;
-	hBrush = CreateSolidBrush(RGB(0, 20, 5));
-	FillRect(hdc, &TempRect, hBrush);
-	DeleteObject(hBrush);
-	sprintf_s(mytimedata, 1000, "\nSave");
-	SetBkColor(hdc, RGB(0, 20, 5));
-	SetTextColor(hdc, RGB(200, 120, 80));
+	hBrush = SafetCreateSolidBrush(RGB(0, 20, 5));
+	SafeFillRect(hdc, &TempRect, hBrush);
+	SafeDeleteObject(hBrush);
+	if(-1==sprintf_s(mytimedata, 1000, "\nSave"))
+	{
+		CrashDumpFunction(50, 0);
+	}
+	SafeSetBkColor(hdc, RGB(0, 20, 5));
+	SafeSetTextColor(hdc, RGB(200, 120, 80));
 	DrawTextA(hdc, mytimedata, -1, &TempRect, DT_CENTER | DT_LEFT);
-	FrameRect(hdc, &TempRect, frameBrush);
+	SafeFrameRect(hdc, &TempRect, frameBrush);
 	//Data avalible
 	memset(mytimedata, 0, sizeof(char) * 1000);
 	TempRect.top += *step;
@@ -1098,26 +1153,32 @@ RECT ButtonsDataWipeandBelow(char * mytimedata, RECT LocalRect, RECT TempRect, H
 	DataUpdateRect.bottom = TempRect.bottom;
 	DataUpdateRect.left = TempRect.left;
 	DataUpdateRect.right = TempRect.right;
-	hBrush = CreateSolidBrush(RGB(200, 120, 80));
-	FillRect(hdc, &TempRect, hBrush);
-	DeleteObject(hBrush);
-	sprintf_s(mytimedata, 1000, "remaining bytes: \n\n%zd", TextHeapRemaining);
-	SetBkColor(hdc, RGB(200, 120, 80));
-	SetTextColor(hdc, RGB(0, 0, 255));
+	hBrush = SafetCreateSolidBrush(RGB(200, 120, 80));
+	SafeFillRect(hdc, &TempRect, hBrush);
+	SafeDeleteObject(hBrush);
+	if(-1==sprintf_s(mytimedata, 1000, "remaining bytes: \n\n%zd", TextHeapRemaining))
+	{
+		CrashDumpFunction(50, 0);
+	}
+	SafeSetBkColor(hdc, RGB(200, 120, 80));
+	SafeSetTextColor(hdc, RGB(0, 0, 255));
 	DrawTextA(hdc, mytimedata, -1, &TempRect, DT_LEFT);
-	FrameRect(hdc, &TempRect, frameBrush);
+	SafeFrameRect(hdc, &TempRect, frameBrush);
 	//Data remaining
 	memset(mytimedata, 0, sizeof(char) * 1000);
 	TempRect.top += *step + *step / 2;
 	TempRect.bottom += *step + *step / 2;
-	hBrush = CreateSolidBrush(RGB(33, 200, 3));
-	FillRect(hdc, &TempRect, hBrush);
-	DeleteObject(hBrush);
-	sprintf_s(mytimedata, 1000, "avalible bytes: \n\n%lld", pchinputbuffermemory);
-	SetBkColor(hdc, RGB(33, 200, 3));
-	SetTextColor(hdc, RGB(0, 0, 0));
+	hBrush = SafetCreateSolidBrush(RGB(33, 200, 3));
+	SafeFillRect(hdc, &TempRect, hBrush);
+	SafeDeleteObject(hBrush);
+	if(-1==sprintf_s(mytimedata, 1000, "avalible bytes: \n\n%lld", pchinputbuffermemory))
+	{
+		CrashDumpFunction(50, 0);
+	}
+	SafeSetBkColor(hdc, RGB(33, 200, 3));
+	SafeSetTextColor(hdc, RGB(0, 0, 0));
 	DrawTextA(hdc, mytimedata, -1, &TempRect, DT_LEFT);
-	FrameRect(hdc, &TempRect, frameBrush);
+	SafeFrameRect(hdc, &TempRect, frameBrush);
 	return DataUpdateRect;
 }
 
@@ -1142,10 +1203,10 @@ void ButtonsFunction(LPARAM lParam, HWND hwnd, int step)
 	TempRect2.bottom = TempRect2.top + step;
 	if (PtInRect(&TempRect2, mypt))//data wipe
 	{
-		hdc = GetDC(hwnd);
+		hdc = safeGetDC(hwnd);
 		InvertRect(hdc, &TempRect2);
-		ReleaseDC(hwnd, hdc);
-		if (MessageBox(GetParent(DatesHwnd), TEXT("This will delete all data for the day, are you sure?"), TEXT("Data Wipe"), MB_OKCANCEL | MB_ICONWARNING) == IDOK)
+		SafeReleaseDC(hwnd, hdc);
+		if (MessageBox(SafeGetParent(DatesHwnd), TEXT("This will delete all data for the day, are you sure?"), TEXT("Data Wipe"), MB_OKCANCEL | MB_ICONWARNING) == IDOK)
 		{
 			int datedate1 = selecteddate;
 			int year1 = datedate1 >> 11;
@@ -1154,41 +1215,41 @@ void ButtonsFunction(LPARAM lParam, HWND hwnd, int step)
 			if (selecteddate != 0)
 				RangedDataWipe(month1, month1, year1, year1, day1, day1);//deletes only one day, the day selected.
 		}
-		InvalidateRect(hwnd, NULL, TRUE);
-		UpdateWindow(hwnd);
+		InvalidateRectSafe(hwnd, NULL, TRUE);
+		UpdateWindowSafe(hwnd);
 	}
 	TempRect2.top += step;
 	TempRect2.bottom += step;
 	assert(TextBoxHwnd);
 	if (PtInRect(&TempRect2, mypt))//word wrap
 	{
-		hdc = GetDC(hwnd);
+		hdc = safeGetDC(hwnd);
 		InvertRect(hdc, &TempRect2);
-		ReleaseDC(hwnd, hdc);
-		if (MessageBox(GetParent(DatesHwnd), TEXT("This will warp the text, by appending newlines to the text at places where it leaves the textbox, are you sure you want to do this?"), TEXT("Text Warp"), MB_OKCANCEL | MB_ICONWARNING) == IDOK)
+		SafeReleaseDC(hwnd, hdc);
+		if (MessageBox(SafeGetParent(DatesHwnd), TEXT("This will warp the text, by appending newlines to the text at places where it leaves the textbox, are you sure you want to do this?"), TEXT("Text Warp"), MB_OKCANCEL | MB_ICONWARNING) == IDOK)
 		{
-			SendMessage(TextBoxHwnd, WM_SETFOCUS, 0, 0);
-			SendMessage(TextBoxHwnd, WORDWRAP, 0, 0);//send message with flag that will send wordwrap function
+			(void)SendMessage(TextBoxHwnd, WM_SETFOCUS, 0, 0);
+			(void)SendMessage(TextBoxHwnd, WORDWRAP, 0, 0);//send message with flag that will send wordwrap function
 		}
-		InvalidateRect(hwnd, NULL, TRUE);
-		UpdateWindow(hwnd);
+		InvalidateRectSafe(hwnd, NULL, TRUE);
+		UpdateWindowSafe(hwnd);
 	}
 	TempRect2.top += step;
 	TempRect2.bottom += step;
 	if (PtInRect(&TempRect2, mypt))//data save
 	{
-		hdc = GetDC(hwnd);
+		hdc = safeGetDC(hwnd);
 		InvertRect(hdc, &TempRect2);
-		ReleaseDC(hwnd, hdc);
+		SafeReleaseDC(hwnd, hdc);
 		if (selecteddate != 0)//
 		{
-			if (MessageBox(GetParent(DatesHwnd), TEXT("This will overwrite any data already present for the day selected, are you sure?"), TEXT("Save Data"), MB_OKCANCEL | MB_ICONWARNING) == IDOK)
+			if (MessageBox(SafeGetParent(DatesHwnd), TEXT("This will overwrite any data already present for the day selected, are you sure?"), TEXT("Save Data"), MB_OKCANCEL | MB_ICONWARNING) == IDOK)
 			{
-				SendMessage(TextBoxHwnd, WM_KEYDOWN, VK_CONTROL, 0);
-				SendMessage(TextBoxHwnd, WM_KEYDOWN, 0x53, 0);
+				(void)SendMessage(TextBoxHwnd, WM_KEYDOWN, VK_CONTROL, 0);
+				(void)SendMessage(TextBoxHwnd, WM_KEYDOWN, 0x53, 0);
 			}
 		}
-		InvalidateRect(hwnd, NULL, TRUE);
-		UpdateWindow(hwnd);
+		InvalidateRectSafe(hwnd, NULL, TRUE);
+		UpdateWindowSafe(hwnd);
 	}
 }

@@ -3,44 +3,30 @@
 /*
 TODO: Its necessary to tie down the "textouts" and "reads", and their relativity to the index of the dynamic buttons itself..
 */
-int poppushindex = 0;
-int popushdynamic = 0;
 static HFONT myfont = { 0 };
 int MonthYearIndex = 0;
 HWND buttonarray[24] = { 0 };
 float indexspace = 0; //always +24 is index space
 COLORREF monthsbackground = RGB(0, 0, 255);
 COLORREF monthsbuttoncolor = RGB(222, 10, 100);
-int lastpushed = 0;
-int lastpoped = 0;
 
 LRESULT CALLBACK MonthsProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	HDC hdc;
-	static int cxClient = 0, cyClient = 0, cyChar = 0, cxChar = 0, cxCaps = 0;
+	static int cxClient = 0, cyClient = 0;
 	int wheeldelta = 0;
 	PAINTSTRUCT ps;
 	TRIVERTEX triv[2] = {0};
 	HWND localhwnd = { 0 };
 	POINT localpoint = { 0 };
-	TEXTMETRIC tm;
 	GRADIENT_RECT grr = { 0 };
-	static int offset = 0;//for ensuring moving relative to the amount being shown at the given moment
 	SCROLLINFO si = { 0 };
-	static RECT monthbuttonrect = { 0 };
 	BOOL static MonthCreationFlag = TRUE;
 	LPWSTR Months[24] = { TEXT("January"),TEXT("February"),TEXT("March"),TEXT("April"),TEXT("May"),TEXT("June"),TEXT("July"),TEXT("August"),TEXT("September"),TEXT("October"),TEXT("November"),TEXT("December"),TEXT("January1"),TEXT("February1"),TEXT("March1"),TEXT("April1"),TEXT("May1"),TEXT("June1"),TEXT("July1"),TEXT("August1"),TEXT("September1"),TEXT("October1"),TEXT("November1"),TEXT("December1") };
 	switch (message)
 	{
 	case WM_CREATE:
 		// To enumerate all styles of all fonts for the ANSI character set 
-		hdc = GetDC(hwnd);
-		assert(hdc != NULL);
-		GetTextMetrics(hdc, &tm);
-		cxChar = tm.tmAveCharWidth;
-		cxCaps = (tm.tmPitchAndFamily & 1 ? 3 : 2) * cxChar / 2;
-		cyChar = tm.tmHeight + tm.tmExternalLeading;
-		ReleaseDC(hwnd, hdc);
 		buttonMCreationRoutine(buttonarray, hwnd, Months);
 		return 0;
 
@@ -86,25 +72,27 @@ LRESULT CALLBACK MonthsProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 				SetWindowLongPtrA(buttonarray[i], GWLP_USERDATA, (long long)((i)+1)+(long long)(indexvar));//sets the years shown, half of yearrange/12+yearzero.
 			}
 			//here put some shoddyfunction to get the things talked about in notes.
-			InvalidateRect(hwnd, NULL, TRUE);
+			InvalidateRectSafe(hwnd, NULL, TRUE);
 		}
 		assert(startmonth >= 0);
 		if (startmonth == 0)
 			startmonth++;
-		SendMessage(buttonarray[startmonth-1], WM_LBUTTONDOWN, 0, 0);
+		(void)SendMessage(buttonarray[startmonth-1], WM_LBUTTONDOWN, 0, 0);
 		if (startday == 0)
 			startday++;
-		SendMessage(buttondates[startday-1], WM_LBUTTONDOWN, 0, 0);
+		(void)SendMessage(buttondates[startday-1], WM_LBUTTONDOWN, 0, 0);
 		return 0;
 
 	case WM_PAINT:
 		hdc = BeginPaint(hwnd, &ps);
-		HBRUSH hBrush = CreateSolidBrush(monthsbackground);
+		if (hdc == NULL)
+			CrashDumpFunction(90, 0);
+		HBRUSH hBrush = SafetCreateSolidBrush(monthsbackground);
 		assert(hBrush != INVALID_HANDLE_VALUE);
-		SetBkColor(hdc, monthsbackground);
-		FillRect(hdc, &ps.rcPaint, hBrush);
-		DeleteObject(hBrush);
-		EndPaint(hwnd, &ps);
+		SafeSetBkColor(hdc, monthsbackground);
+		SafeFillRect(hdc, &ps.rcPaint, hBrush);
+		SafeDeleteObject(hBrush);
+		(void)EndPaint(hwnd, &ps);
 		RECT windorect = { 0 };
 		//fading scheme below
 		int ysize = buttonrect.bottom - buttonrect.top;
@@ -132,9 +120,12 @@ LRESULT CALLBACK MonthsProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 			triv[1].Blue = GetBValue(monthsbuttoncolor) * 255;
 			triv[1].Green = GetGValue(monthsbuttoncolor) * 255;
 			assert(buttonarray != NULL);
-			GetWindowRect(buttonarray[TrustedIndex], &windorect);
-			MapWindowPoints(NULL, hwnd, (LPPOINT)&windorect, 2);
-			GradientFill(hdc, triv, 2, &grr, 1, GRADIENT_FILL_RECT_V);
+			GetWindowRectSafe(buttonarray[TrustedIndex], &windorect);
+			MapWindowPointsSafe(NULL, hwnd, (LPPOINT)&windorect, 2);
+			if (FALSE == GradientFill(hdc, triv, 2, &grr, 1, GRADIENT_FILL_RECT_V))
+			{
+				CrashDumpFunction(100, 0);
+			}
 			triv[0].x = buttonrect.left;
 			triv[0].y = windorect.bottom;
 			triv[1].x = buttonrect.right;
@@ -145,30 +136,33 @@ LRESULT CALLBACK MonthsProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 			triv[0].Red = GetRValue(monthsbuttoncolor) * 255;
 			triv[0].Blue = GetBValue(monthsbuttoncolor) * 255;
 			triv[0].Green = GetGValue(monthsbuttoncolor) * 255;
-			GradientFill(hdc, triv, 2, &grr, 1, GRADIENT_FILL_RECT_V);
-			MoveWindow(buttonarray[TrustedIndex], buttonrect.left, windorect.top, buttonrect.right, windorect.bottom-windorect.top, TRUE);
-			UpdateWindow(buttonarray[TrustedIndex]);
+			if (FALSE == GradientFill(hdc, triv, 2, &grr, 1, GRADIENT_FILL_RECT_V))
+			{
+				CrashDumpFunction(100, 0);
+			}
+			MoveWindowSafe(buttonarray[TrustedIndex], buttonrect.left, windorect.top, buttonrect.right, windorect.bottom-windorect.top, TRUE);
+			UpdateWindowSafe(buttonarray[TrustedIndex]);
 		}
 		if (GlobalDebugFlag == TRUE)
 		{
 			TEXTMETRICA textmetric = { 0 };
 			HDC monthshdc = { 0 };
-			monthshdc = GetDC(GetParent(buttonarray[0]));
+			monthshdc = safeGetDC(SafeGetParent(buttonarray[0]));
 			assert(monthshdc != NULL);
 			GetTextMetricsA(monthshdc, &textmetric);
-			ReleaseDC(GetParent(buttonarray[0]), monthshdc);
+			SafeReleaseDC(SafeGetParent(buttonarray[0]), monthshdc);
 		}
 		hdc = NULL;
-		hdc = GetDC(hwnd);
+		hdc = safeGetDC(hwnd);
 		COLORREF invmonthsbackground = RGB(GetRValue(~monthsbackground), GetGValue(~monthsbackground), GetBValue(~monthsbackground));
-		hBrush = CreateSolidBrush(invmonthsbackground);
+		hBrush = SafetCreateSolidBrush(invmonthsbackground);
 		RECT monthsrect = { 0 };
 		monthsrect.right = cxClient;
 		monthsrect.bottom = cyClient;
 		monthsrect.left = monthsrect.right - monthsrect.right / 30;
-		FillRect(hdc, &monthsrect, hBrush);
-		DeleteObject(hBrush);
-		ReleaseDC(hwnd, hdc);
+		SafeFillRect(hdc, &monthsrect, hBrush);
+		SafeDeleteObject(hBrush);
+		SafeReleaseDC(hwnd, hdc);
 		return 0;
 	case WM_MOUSEWHEEL:
 		localpoint.x = 1;
@@ -176,7 +170,7 @@ LRESULT CALLBACK MonthsProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 		localhwnd = ChildWindowFromPoint(hwnd, localpoint);
 		assert(localhwnd != NULL);
 		int firstbuttonid = 0;
-		firstbuttonid = (int)GetWindowLongPtr(localhwnd, GWLP_USERDATA);
+		firstbuttonid = (int)SafeGetWindowLongPtr(localhwnd, GWLP_USERDATA);
 		wheeldelta = GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
 		if ((firstbuttonid != 1 || wheeldelta != -1) && (wheeldelta != 1 || firstbuttonid+11 < yearrange))
 		{
@@ -184,7 +178,7 @@ LRESULT CALLBACK MonthsProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 		}
 		break;
 	case WM_DESTROY:
-		DeleteObject(myfont);
+		SafeDeleteObject(myfont);
 		for (TrustedIndex = 0; TrustedIndex < 24; TrustedIndex++)
 			DestroyButton(buttonarray[TrustedIndex]);
 		PostQuitMessage(0);
@@ -223,12 +217,12 @@ HWND CreateButtonM(LPWSTR szString, RECT Size, HWND hwnd, int index)
 	int ysize = Size.bottom - Size.top;
 	int separationfactor = 2;
 
-	HWND hwndButton = CreateWindow(TEXT("Button class"), szString, WS_VISIBLE | WS_CHILD | WS_TABSTOP | BS_DEFPUSHBUTTON | BS_TEXT | BS_CENTER, Size.left, ysize * index * separationfactor, Size.right, Size.bottom, hwnd, NULL, (HINSTANCE)GetWindowLongPtr(hwnd, GWLP_HINSTANCE), NULL);
+	HWND hwndButton = CreateWindow(TEXT("Button class"), szString, WS_VISIBLE | WS_CHILD | WS_TABSTOP | BS_DEFPUSHBUTTON | BS_TEXT | BS_CENTER, Size.left, ysize * index * separationfactor, Size.right, Size.bottom, hwnd, NULL, (HINSTANCE)SafeGetWindowLongPtr(hwnd, GWLP_HINSTANCE), NULL);
 	Button_Enable(hwndButton, TRUE);
 	Button_SetText(hwndButton, szString);
 	RECT dummyrect = { 0 };
-	GetWindowRect(hwndButton, &dummyrect);
-	GetWindowRect(hwnd, &dummyrect);
+	GetWindowRectSafe(hwndButton, &dummyrect);
+	GetWindowRectSafe(hwnd, &dummyrect);
 	SetWindowLongPtr(hwndButton, GWLP_USERDATA, (size_t)index + 1);
 	if (hwndButton)
 		return hwndButton;
@@ -243,7 +237,7 @@ LRESULT ButtonProcM(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	-Hot state, on stack.
 	-Cold state, on external data file.
 	*/
-	static int paintcall = 0, cxClient = 0, cyClient = 0, lastlocalint = 0, cyChar = 0;
+	static int lastlocalint = 0;
 	PAINTSTRUCT ps = { NULL };
 	HDC hdc;
 	HBRUSH hBrush;
@@ -253,7 +247,7 @@ LRESULT ButtonProcM(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	static int monthindex = 1;
 	static LPSTR month[12] = { "January", "February", "March", "April", "May", "June", "July", "August", "Septemeber", "October", "November", "December" };
 	static LPSTR year[2] = { 0 };
-	int buttonindex = (int)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+	int buttonindex = (int)SafeGetWindowLongPtr(hwnd, GWLP_USERDATA);
 	static char* mindexspace = { 0 };
 
 	switch (message)
@@ -262,11 +256,11 @@ LRESULT ButtonProcM(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		if (Firstbuttonflag == TRUE)
 		{
 			RECT temprect9 = { 0 };
-			GetClientRect(hwnd, &temprect9);
+			SafetGetClientRect(hwnd, &temprect9);
 			myfont = CreateFontA(0, temprect9.bottom / 3, 0, 0, FW_REGULAR, TRUE, FALSE, FALSE, ANSI_CHARSET, OUT_CHARACTER_PRECIS, CLIP_TT_ALWAYS, PROOF_QUALITY, FIXED_PITCH, NULL);
 			assert(myfont != NULL);
 			Firstbuttonflag = FALSE;
-			mindexspace = SafeCalloc(  (size_t)yearrange+100,    sizeof(char));
+			mindexspace = SafeCalloc((size_t)yearrange + 100, sizeof(char));
 		}
 		return 0;
 	case WM_LBUTTONDOWN: //memory leak happens befor buttondown message is even sent
@@ -278,14 +272,14 @@ LRESULT ButtonProcM(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		assert(TextBoxInput != NULL);
 		Edit_Enable(TextBoxInput, FALSE);
 		markflagmonth = TRUE; //check if there is a mark in the month where we going, so the painting loop can be done for it. 
-		GetClientRect(hwnd, &localrect);
-		hdc = GetDC(hwnd);
-		hBrush = CreateSolidBrush(RGB(0, 0, 0));
-		FillRect(hdc, &localrect, hBrush);
-		ReleaseDC(hwnd, hdc);
-		DeleteObject(hBrush);
-		MonthYearIndex = (int)GetWindowLongPtr(hwnd, GWLP_USERDATA);
-		selecteddate = ((WORD)((selecteddate)) & 0x7FF) + ((WORD)(((selecteddate)) >> 23) <<23);//get year section to be 0 bits, that is 11th to 23rd bit. 
+		SafetGetClientRect(hwnd, &localrect);
+		hdc = safeGetDC(hwnd);
+		hBrush = SafetCreateSolidBrush(RGB(0, 0, 0));
+		SafeFillRect(hdc, &localrect, hBrush);
+		SafeReleaseDC(hwnd, hdc);
+		SafeDeleteObject(hBrush);
+		MonthYearIndex = (int)SafeGetWindowLongPtr(hwnd, GWLP_USERDATA);
+		selecteddate = ((WORD)((selecteddate)) & 0x7FF) + ((WORD)(((selecteddate)) >> 23) << 23);//get year section to be 0 bits, that is 11th to 23rd bit. 
 		int currentyear = yearzero + MonthYearIndex / 12;
 		if (MonthYearIndex % 12 == 0)
 			currentyear--;
@@ -293,10 +287,10 @@ LRESULT ButtonProcM(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		assert(mindexspace != NULL);
 		mindexspace[lastlocalint] = FALSE;
 		mindexspace[MonthYearIndex] = TRUE;
-		lastlocalint = MonthYearIndex;				
-		InvalidateRect(GetParent(hwnd), NULL, TRUE);
-		SendMessage(GetParent(buttondates[0]), WM_COMMAND, MonthYearIndex, 0);//updates monthyear index
-		SendMessage(GetParent(buttonmarks[0]), WM_COMMAND, MonthYearIndex, 0);//notify marks.c that the month-year has //memory leak happens before thischanged, so it can update the coloring/shapes for the dates present.
+		lastlocalint = MonthYearIndex;
+		InvalidateRectSafe(SafeGetParent(hwnd), NULL, TRUE);
+		(void)SendMessage(SafeGetParent(buttondates[0]), WM_COMMAND, MonthYearIndex, 0);//updates monthyear index
+		(void)SendMessage(SafeGetParent(buttonmarks[0]), WM_COMMAND, MonthYearIndex, 0);//notify marks.c that the month-year has //memory leak happens before thischanged, so it can update the coloring/shapes for the dates present.
 		startmonth = MonthYearIndex % 12;
 		if (startmonth == 0)
 			startmonth = 12;
@@ -304,75 +298,79 @@ LRESULT ButtonProcM(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			startyear = (MonthYearIndex / 12) + yearzero;
 		else startyear = 0;
 		return 0;
-	case WM_SIZE:
-			cxClient = LOWORD(lParam);
-			cyClient = HIWORD(lParam);
-			return 0;
 	case WM_PAINT:
 		assert(mindexspace != NULL);
-			paintcall++;
-			hdc = BeginPaint(hwnd, &ps);	
-			OVERLAPPED overlapstruct = { 0 };
-			overlapstruct.Offset = (((buttonindex * 150) + 6) - 150);
-			int testint = (int)GetWindowLongPtr(hwnd, GWLP_USERDATA);
-			COLORREF invertedbcolor = RGB(GetRValue(~monthsbuttoncolor), GetGValue(~monthsbuttoncolor), GetBValue(~monthsbuttoncolor));
-			if ((mindexspace[testint] == TRUE))
+		hdc = BeginPaint(hwnd, &ps);
+		if (hdc == NULL)
+			CrashDumpFunction(90, 0);
+		OVERLAPPED overlapstruct = { 0 };
+		overlapstruct.Offset = (((buttonindex * 150) + 6) - 150);
+		int testint = (int)SafeGetWindowLongPtr(hwnd, GWLP_USERDATA);
+		COLORREF invertedbcolor = RGB(GetRValue(~monthsbuttoncolor), GetGValue(~monthsbuttoncolor), GetBValue(~monthsbuttoncolor));
+		if ((mindexspace[testint] == TRUE))
+		{
+			hBrush = SafetCreateSolidBrush(invertedbcolor);
+			SafeSetBkColor(hdc, invertedbcolor);
+			SafeSetTextColor(hdc, monthsbuttoncolor);
+		}
+		else
+		{
+			hBrush = SafetCreateSolidBrush(monthsbuttoncolor);
+			SafeSetBkColor(hdc, monthsbuttoncolor);
+			SafeSetTextColor(hdc, invertedbcolor);
+		}
+		SafetGetClientRect(hwnd, &ps.rcPaint);
+		SafeFillRect(hdc, &ps.rcPaint, hBrush);
+		SafeDeleteObject(hBrush);
+		char charbuffer[3] = { 0 };
+		char tempstring[1000] = { 0 };
+		if(-1==sprintf_s(tempstring, 1000, "%sLocaldata.txt", theworkingdirectory))
+		{
+			CrashDumpFunction(50, 0);
+		}
+		hfile = CreateFileA(tempstring, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+		assert(hfile != INVALID_HANDLE_VALUE);
+		if (FALSE == ReadFile(hfile, charbuffer, 2, NULL, &overlapstruct))
+		{
+			SafeCloseHandle(hfile);
+			CrashDumpFunction(201, 0);
+			return -1;
+		}
+		monthindex = mystringtoint(charbuffer);
+		BOOL randflag1 = FALSE;
+		SafeSelectObject(hdc, myfont);
+		SafeTextOutA(hdc, (LONG)ps.rcPaint.right / 3, (LONG)ps.rcPaint.bottom / 2, month[monthindex - 1], (int)strlen(month[monthindex - 1]));
+		//put a , year at the end
+		overlapstruct.Offset -= 6;
+		if (overlapstruct.Offset == 1800)
+			randflag1 = TRUE;
+		char yearbuffer[7] = { 0 };
+		if (FALSE == ReadFile(hfile, yearbuffer, 4, NULL, &overlapstruct))
+		{
+			SafeCloseHandle(hfile);
+			CrashDumpFunction(204, 0);
+			return -1;
+		}
+		year[0] = yearbuffer;
+		SafeTextOutA(hdc, (LONG)ps.rcPaint.left, (LONG)ps.rcPaint.top, year[0], (int)strlen(year[0]));
+		overlapstruct.Offset += 6;
+		assert(buttonarray != NULL);
+		if (GlobalDebugFlag == TRUE)
+		{
+			char* printstring = SafeCalloc(50, sizeof(char));
+			int m = 0;
+			for (m = 0; hwnd != buttonarray[m] && m < buttonfactor; m++)
+				;
+			if(-1==sprintf_s(printstring, 50, "%d, %d", buttonindex, m))
 			{
-				hBrush = CreateSolidBrush(invertedbcolor);
-				SetBkColor(hdc, invertedbcolor);
-				SetTextColor(hdc, monthsbuttoncolor);
+				CrashDumpFunction(50, 0);
 			}
-			else
-			{
-				hBrush = CreateSolidBrush(monthsbuttoncolor);
-				SetBkColor(hdc, monthsbuttoncolor);
-				SetTextColor(hdc, invertedbcolor);
-			}
-			GetClientRect(hwnd, &ps.rcPaint);
-			FillRect(hdc, &ps.rcPaint, hBrush);
-			DeleteObject(hBrush);
-			char charbuffer[3] = { 0 };
-			char tempstring[1000] = { 0 };
-			sprintf_s(tempstring, 1000, "%sLocaldata.txt", theworkingdirectory);
-			hfile = CreateFileA(tempstring, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-			if (FALSE == ReadFile(hfile, charbuffer, 2, NULL, &overlapstruct))
-			{
-				CloseHandle(hfile);
-				CrashDumpFunction(201,0);
-				return -1;
-			}
-			monthindex = mystringtoint(charbuffer);
-			BOOL randflag1 = FALSE;
-			SelectObject(hdc, myfont);
-			TextOutA(hdc, (LONG)ps.rcPaint.right/3, (LONG)ps.rcPaint.bottom/2, month[monthindex-1], (int)strlen(month[monthindex-1]));
-			//put a , year at the end
-			overlapstruct.Offset -= 6;
-			if (overlapstruct.Offset == 1800)
-				randflag1 = TRUE;
-			char yearbuffer[7] = { 0 };
-			if (FALSE == ReadFile(hfile, yearbuffer, 4, NULL, &overlapstruct))
-			{
-				CloseHandle(hfile);
-				CrashDumpFunction(204,0);
-				return -1;
-			}
-			year[0] = yearbuffer;
-			TextOutA(hdc, (LONG)ps.rcPaint.left, (LONG)ps.rcPaint.top, year[0], (int)strlen(year[0]));
-			overlapstruct.Offset += 6;
-			assert(buttonarray != NULL);
-			if (GlobalDebugFlag == TRUE)
-			{
-				char* printstring = SafeCalloc(  50,    sizeof(char));
-				int m = 0;
-				for (m = 0; hwnd != buttonarray[m] && m<buttonfactor; m++)
-					;
-				sprintf_s(printstring, 50, "%d, %d", buttonindex, m);
-				TextOutA(hdc, (LONG)ps.rcPaint.right / 2, (LONG)ps.rcPaint.top, printstring, (int)strlen(printstring));
-				free(printstring);
-			}
-			CloseHandle(hfile);
-			EndPaint(hwnd, &ps);
-			return 0;
+			SafeTextOutA(hdc, (LONG)ps.rcPaint.right / 2, (LONG)ps.rcPaint.top, printstring, (int)strlen(printstring));
+			free(printstring);
+		}
+		SafeCloseHandle(hfile);
+		(void)EndPaint(hwnd, &ps);
+		return 0;
 	case WM_DESTROY:
 		free(mindexspace);
 		PostQuitMessage(0);
@@ -385,13 +383,12 @@ LRESULT ButtonProcM(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 //pops the firstwindow by putting it to lastwindow pos
 int PopChildMonth(HWND hwnd, int lastwindow)
 {
-	int static fag = 1;
 	RECT Temprect;
 	assert(buttonarray != NULL);
-	GetWindowRect(buttonarray[lastwindow], &Temprect);
-	MapWindowPoints(HWND_DESKTOP, GetParent(hwnd), (LPPOINT)&Temprect, 2);
-	MoveWindow(hwnd, Temprect.left, Temprect.top, Temprect.right-Temprect.left, Temprect.bottom-Temprect.top, TRUE);//pops the window by moving to the lastwindow pos
-	int lindex = (int)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+	GetWindowRectSafe(buttonarray[lastwindow], &Temprect);
+	MapWindowPointsSafe(HWND_DESKTOP, SafeGetParent(hwnd), (LPPOINT)&Temprect, 2);
+	MoveWindowSafe(hwnd, Temprect.left, Temprect.top, Temprect.right-Temprect.left, Temprect.bottom-Temprect.top, TRUE);//pops the window by moving to the lastwindow pos
+	int lindex = (int)SafeGetWindowLongPtr(hwnd, GWLP_USERDATA);
 	lindex += 24;
 	assert(hwnd != NULL);
 	SetWindowLongPtr(hwnd, GWLP_USERDATA, lindex);
@@ -403,10 +400,10 @@ int PushChildMonth(HWND hwnd, int firstwindow)
 	assert(hwnd != NULL);
 	assert(buttonarray != NULL);
 	RECT Temprect;
-	GetWindowRect(buttonarray[firstwindow], &Temprect);
-	MapWindowPoints(HWND_DESKTOP, GetParent(hwnd), (LPPOINT)&Temprect, 2);
-	MoveWindow(hwnd, Temprect.left, Temprect.top, Temprect.right - Temprect.left, Temprect.bottom - Temprect.top, TRUE);//pushes the window by moving to the firstwindow pos
-	int lindex = (int)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+	GetWindowRectSafe(buttonarray[firstwindow], &Temprect);
+	MapWindowPointsSafe(HWND_DESKTOP, SafeGetParent(hwnd), (LPPOINT)&Temprect, 2);
+	MoveWindowSafe(hwnd, Temprect.left, Temprect.top, Temprect.right - Temprect.left, Temprect.bottom - Temprect.top, TRUE);//pushes the window by moving to the firstwindow pos
+	int lindex = (int)SafeGetWindowLongPtr(hwnd, GWLP_USERDATA);
 	lindex -= 24;
 	SetWindowLongPtr(hwnd, GWLP_USERDATA, lindex);
 	return 0;
@@ -419,7 +416,7 @@ int DynamicScroll(int scrollamount, HWND hwnd)
 	assert(buttonarray != NULL);
 	RECT monthsbuttonrect = { 0 };
 	static int firstwindow = 0, lastwindow = buttonfactor-1;//firstwindow is window that can be poped, lastwindow is window that can be pushed
-	GetClientRect(buttonarray[0], &monthsbuttonrect);
+	SafetGetClientRect(buttonarray[0], &monthsbuttonrect);
 	int distancebetweenboxes = monthsbuttonrect.bottom * 2;//this is equivalent to two y sizes of the buttom
 	// If the position has changed, scroll window and update it.
 	if (scrollamount > 0)//wheel moved forward
@@ -445,15 +442,15 @@ int DynamicScroll(int scrollamount, HWND hwnd)
 			}
 			if(k>-1 && k<buttonfactor)
 			{
-				GetWindowRect(buttonarray[k], &monthsbuttonrect);
-				MapWindowPoints(HWND_DESKTOP, GetParent(hwnd), (LPPOINT)&monthsbuttonrect, 2);
+				GetWindowRectSafe(buttonarray[k], &monthsbuttonrect);
+				MapWindowPointsSafe(HWND_DESKTOP, SafeGetParent(hwnd), (LPPOINT)&monthsbuttonrect, 2);
 			}
 			if (k == -2)//the first iteration, set the monthsbuttonrect to be the first button relative to the upper edge of the monthwindow
 			{
-				monthsbuttonrect.top = -(distancebetweenboxes);//doing this so movewindow would set monthsbuttonrect.top to 0 when plused with distancebetweenboxes
+				monthsbuttonrect.top = -(distancebetweenboxes);//doing this so MoveWindowSafe would set monthsbuttonrect.top to 0 when plused with distancebetweenboxes
 				k = i - 1;//set k to k-1, and it will be for all future iterations tailing i so it can be used as relative value
 			}
-			MoveWindow(buttonarray[i], 0, monthsbuttonrect.top+(distancebetweenboxes), monthsbuttonrect.right, distancebetweenboxes/2, TRUE);//+distancebetweentwoboxes will put the window below always relatively two buttons worth height below
+			MoveWindowSafe(buttonarray[i], 0, monthsbuttonrect.top+(distancebetweenboxes), monthsbuttonrect.right, distancebetweenboxes/2, TRUE);//+distancebetweentwoboxes will put the window below always relatively two buttons worth height below
 		}
 	}
 	if (scrollamount < 0)//wheel moved backward
@@ -479,15 +476,15 @@ int DynamicScroll(int scrollamount, HWND hwnd)
 			}
 			if (k > -1 && k < buttonfactor)
 			{
-				GetWindowRect(buttonarray[k], &monthsbuttonrect);
-				MapWindowPoints(HWND_DESKTOP, GetParent(hwnd), (LPPOINT)&monthsbuttonrect, 2);
+				GetWindowRectSafe(buttonarray[k], &monthsbuttonrect);
+				MapWindowPointsSafe(HWND_DESKTOP, SafeGetParent(hwnd), (LPPOINT)&monthsbuttonrect, 2);
 			}
 			if (k == -2)//the first iteration, set the monthsbuttonrect to be the first button relative to the upper edge of the monthwindow
 			{
-				monthsbuttonrect.top = -(distancebetweenboxes);//doing this so movewindow would set monthsbuttonrect.top to 0 when plused with distancebetweenboxes
+				monthsbuttonrect.top = -(distancebetweenboxes);//doing this so MoveWindowSafe would set monthsbuttonrect.top to 0 when plused with distancebetweenboxes
 				k = i - 1;//set k to k-1, and it will be for all future iterations tailing i so it can be used as relative value
 			}
-			MoveWindow(buttonarray[i], 0, monthsbuttonrect.top + (distancebetweenboxes), monthsbuttonrect.right, distancebetweenboxes / 2, TRUE);//+distancebetweentwoboxes will put the window below always relatively two buttons worth height below
+			MoveWindowSafe(buttonarray[i], 0, monthsbuttonrect.top + (distancebetweenboxes), monthsbuttonrect.right, distancebetweenboxes / 2, TRUE);//+distancebetweentwoboxes will put the window below always relatively two buttons worth height below
 		}
 		return TRUE;
 	}

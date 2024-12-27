@@ -7,6 +7,7 @@
 #include <Richedit.h>
 #include <CommCtrl.h>
 #include <assert.h>
+#include <cstddef>
 
 typedef struct dateanddata
 {
@@ -26,30 +27,11 @@ extern size_t TextHeapRemaining;
 extern int yearrange;
 extern BOOL RTForTXT;
 
-typedef struct windowlocdata
-{
-	HWND chwnd;
-	RECT wcrect;
-} winloc;
-
-typedef struct carrierreturnspotter
-{
-	POINT carretpos;//position of carrier return
-	int characterindex; //index of carrier return in the buffer
-} CrgS;
-
 typedef struct RGBcolorsData
 {
 	char colorname[52];
 	COLORREF RGBcolor;
 }RGBData;
-
-typedef struct Streamcallbackdat
-{
-	HANDLE hFile;//hFile
-	size_t offset;//offset
-	size_t writeamount;//amount to write
-} Streamdata;
 
 int startyear, startmonth, startday;//used for saving the last date checked before closing the program
 
@@ -84,12 +66,8 @@ int PushChildMonth(HWND hwnd, int firstwindow);
 BOOL ChildCreationFunction(void);
 BOOL DestroyButton(HWND hwnd);
 
-//Debugging functions
+//Debugging function
 BOOL ShowMessage(HWND hwnd, int XClient, int YClient, UINT message);
-
-//cause of 
-// 
-//  we put this shit here
 
 extern RECT buttonrect;
 extern RECT buttonrectd;
@@ -104,48 +82,21 @@ extern HWND buttonarray[24];
 
 extern int TrustedIndex;//mittigating "Speculative Execution Side Channel hardware vulnerabilities" for some i loops.
 
-typedef struct tCharBox {
-	short int Index; //buffer index
-	short int xPos;
-	short int yPos;
-}Ichar;
-
 COLORREF ColorSelection[100];
 
-extern int pusenjekurca;
+extern int shoddyvar;
 
 HBITMAP * MyBitmapsArray[100];
 
 //dataformating.c structure
 
 #pragma pack(1)
-typedef struct markflags
-{
-	short int shape;
-	COLORREF color;
-} markflags;
-
-typedef struct datedataunit
-{
-	short int date;
-	TCHAR stringcontext[15000];
-	markflags localflag;
-	
-}datedataunit;
-
-typedef struct monthdataunit 
-{
-	short int month;
-	datedataunit monthdata[32];
-}monthdataunit;
-
 
 int mystringtoint(LPCSTR string);
 BOOL RangedDataWipe(int monthup, int monthdown, int yearup, int yeardown, int dayup, int daydown);
 int MarkPresenceCheck(HANDLE hFile, int filelength, int dateticks, BOOL lswitch, int* shapevalue, int* colorvalue, BOOL* mydflags);
 
 extern HWND TextBoxHwnd;
-extern BOOL datechangecheck;
 extern HWND DatesHwnd;
 extern int MonthYearIndex;
 extern int yearzero;
@@ -156,8 +107,6 @@ extern BOOL TextBoxFlag;
 extern BOOL TextBoxCalFlag;
 extern BOOL GlobalDebugFlag;
 extern long long pchinputbuffermemory;
-extern long long xAllocamount;
-extern long long yAllocamount;
 extern COLORREF monthsbackground;
 extern COLORREF datesbackground;
 extern COLORREF textbackground;
@@ -257,12 +206,12 @@ BOOL DateShaping(int shapeid, char* filebuffer, int* i, int datetick);
 HWND ColorRemovalRoutine(int offsetpresent, int shiuze, OVERLAPPED fuckshit, HANDLE hFile, HWND refferentdate, int datetick);
 HWND MarkRemoveRoutine(int offsetpresent, int shiuze, OVERLAPPED fuckshit, HANDLE hFile, int datetick, HWND refferentdate);
 char* marksbuffermodifier(int shapeid, int colorid, char* filebuffer, int datetick, int* i, int presentshapeval, HWND refferentdate, HDC hdc, int presentcolorval);
-bool markspaint(BOOL* dateflags);
+void markspaint(BOOL* dateflags);
 bool marksmonthcheck(char* marksbuffer, int filesize);
 char* tempbuffermarkchecker(BOOL* flag69, int* checker, char* tempbuffer2, char* TempBuffer, BOOL lswitch, int* day, BOOL* mydflags, int* i, int month, int* indexplace, int* colorvalue, int* shapevalue);
 HWND colorshapepresent(HWND refferentbutton, BOOL* mydflags, int shape, int color, int day);
 char* dataovverridingsmarks(char* tempbuffer2, char* TempBuffer, BOOL* flag69, int day, int* indexplace, int* colorvalue, int* shapevalue, int* checker, int* i);
-int ColorsMaker(RGBData mycolors[]);
+void ColorsMaker(RGBData mycolors[]);
 
 int LoadConfigData(size_t filesize, char* tempstring, BOOL readflag, HANDLE hFile);
 int ArrangeDates(char* tempdate, int datesamount, pdate datesarray, lpdateanddata mydataset);
@@ -271,3 +220,24 @@ void IFComparison(char* macroformated, int dummyint, double ifstatement2, int* i
 void ButtonsFunction(LPARAM lParam, HWND hwnd, int step);
 
 void* SafeCalloc(size_t size, int bytes);
+void GetWindowRectSafe(HWND hwnd, RECT * rectval);
+void MapWindowPointsSafe(HWND hWndFrom, HWND hWndTo, LPPOINT lpPoints, UINT cPoints);
+void UpdateWindowSafe(HWND hwnd);
+void InvalidateRectSafe(HWND hwnd, RECT* lpRect, BOOL bErase);
+void MoveWindowSafe(HWND hwnd, int x, int y, int width, int height, BOOL repaint);
+HDC safeGetDC(HWND hwnd);
+void SafewriteFile(HANDLE hFile, LPCVOID lpBuffer, DWORD nNumbrofBytesToWrite, LPDWORD lpNumberofbytestobewritten, LPOVERLAPPED lpoverlapped);
+void SafeCloseHandle(HDC hdc);
+BOOL SafetGetClientRect(HWND hwnd, LPRECT lpRect);
+HBRUSH SafetCreateSolidBrush(COLORREF rgb);
+void SafeFillRect(HDC hdc, RECT* lprc, HANDLE hbr);
+void SafeDeleteObject(HGDIOBJ ho);
+void SafeReleaseDC(HWND hwnd, HDC hdc);
+void SafeSetBkColor(HDC hdc, COLORREF color);
+void SafeSetTextColor(HDC hdc, COLORREF color);
+void SafeSelectObject(HDC hdc, HGDIOBJ h);
+void SafeTextOutA(HDC hdc, int x, int y, LPCSTR lpString, int c);
+void SafeFrameRect(HDC hdc, RECT* myrect, HBRUSH hBrush);
+void SafeSetFocus(HWND hwnd);
+void safe_itoa_s(int num, char* buff, size_t buffercount, int radix);
+HWND SafeGetParent(HWND hwnd);
