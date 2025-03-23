@@ -429,7 +429,7 @@ BOOL savingFunction(int* appendlocationindex, char * pchInputBuf, OVERLAPPED* ov
 	hFile = CreateFileA(datasource, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (INVALID_HANDLE_VALUE == hFile)
 	{
-		CrashDumpFunction(3416, 0);
+		CrashDumpFunction(3416, 0);//
 		return FALSE;
 	}
 	if (strLength < 1)//if input is empty, delete the date mark as well as the data. Assuming data mark exist(develop check to see if it does!
@@ -474,12 +474,12 @@ BOOL LargeDataWrite(char* pchInputBuf, OVERLAPPED* overlapstruct, int* amountrea
 	assert(pchInputBuf != NULL);
 	if (FALSE == ReadFile(hFile, readbuffer, *amountread - overlapstruct->Offset, NULL, overlapstruct))
 	{
-		DWORD nigga = GetLastError();
+		DWORD errordate = GetLastError();
 		free(readbuffer);
 		free(readbuffer2);
 		readbuffer2 = readbuffer = NULL;
 		CrashDumpFunction(251,0);
-		return -1;
+		return 0;
 	}
 	if ((*amountread - overlapstruct->Offset) == 0)//we need to append data at EOF
 	{
@@ -661,21 +661,21 @@ char * DateTextShow(char * selecteddate1)
 	}
 	else if (datedayindex < 10)
 	{
-		if (-1 == sprintf_s(selecteddate1, 20, "%s%d :%d :%d%s", specialchar, datedayindex, datemonthindex, dateyear, specialchar))
+		if (-1 == sprintf_s(selecteddate1, 20, "%s%d :%d:%d%s", specialchar, datedayindex, datemonthindex, dateyear, specialchar))
 		{
 			CrashDumpFunction(50, 0);
 		}
 	}
 	else if (datemonthindex < 10)
 	{
-		if (-1 == sprintf_s(selecteddate1, 20, "%s%d :%d :%d%s", specialchar, datedayindex, datemonthindex, dateyear, specialchar))
+		if (-1 == sprintf_s(selecteddate1, 20, "%s%d:%d :%d%s", specialchar, datedayindex, datemonthindex, dateyear, specialchar))
 		{
 			CrashDumpFunction(50, 0);
 		}
 	}
 	else
 	{
-		if (-1 == sprintf_s(selecteddate1, 20, "%s%d :%d :%d%s", specialchar, datedayindex, datemonthindex, dateyear, specialchar))
+		if (-1 == sprintf_s(selecteddate1, 20, "%s%d:%d:%d%s", specialchar, datedayindex, datemonthindex, dateyear, specialchar))
 		{
 			CrashDumpFunction(50, 0);
 		}
