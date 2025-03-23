@@ -474,7 +474,6 @@ BOOL LargeDataWrite(char* pchInputBuf, OVERLAPPED* overlapstruct, int* amountrea
 	assert(pchInputBuf != NULL);
 	if (FALSE == ReadFile(hFile, readbuffer, *amountread - overlapstruct->Offset, NULL, overlapstruct))
 	{
-		DWORD errordate = GetLastError();
 		free(readbuffer);
 		free(readbuffer2);
 		readbuffer2 = readbuffer = NULL;
